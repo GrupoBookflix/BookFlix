@@ -1,4 +1,4 @@
-# bookflix
+# Bookflix
 
 A new Flutter project.
 
