@@ -30,6 +30,47 @@ class _CadastroState extends State<Cadastro> {
     return null;
   }
 
+  Future<void> _registraUsuario(String nome, String email, String senha) async {
+    
+    const String apiUrl = 'https://backend-8wht.onrender.com/usuarios';
+    
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'nome': name,
+        'email': email,
+        'senha': senha,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      // sucesso
+      Get.back();
+    } else {
+      // falha
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Erro'),
+            content: Text('Falha no cadastro. Por favor, tente novamente mais tarde.'),
+            actions: <Widget>[
+              TextButton(
+                child: Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
   final GlobalKey<FormState> _nameFormKey = GlobalKey<FormState>();
   final GlobalKey<FormState> _emailFormKey = GlobalKey<FormState>();
   final GlobalKey<FormState> _senhaFormKey = GlobalKey<FormState>();
@@ -267,7 +308,7 @@ class _CadastroState extends State<Cadastro> {
                 bool repeteSenhaValida = _repeteSenhaFormKey.currentState!.validate();                
 
                 if (nomeValido && emailValido && senhaValida && repeteSenhaValida) {
-                  //Processa cadastro
+                  await _registraUsuario(_nameFormKey.text, _emailFormKey.text, _senhaFormKey.text);
                 } else {
                   setState(() {
                     //Implementar estado
