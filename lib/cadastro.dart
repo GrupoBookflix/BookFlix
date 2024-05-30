@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 // ignore: unnecessary_import
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'componentes.dart';
 
+LoadingOverlay carregamento = LoadingOverlay();
+    
 class Cadastro extends StatefulWidget {
   // ignore: use_super_parameters
   const Cadastro({Key? key}) : super(key: key);
@@ -31,44 +36,92 @@ class _CadastroState extends State<Cadastro> {
   }
 
   Future<void> _registraUsuario(String nome, String email, String senha) async {
-    
-    const String apiUrl = 'https://backend-8wht.onrender.com/usuarios';
+
+    carregamento.show(context);    
+
+    const String apiUrl = 'https://backend-8wht.onrender.com/usuario';
     
     final response = await http.post(
       Uri.parse(apiUrl),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
-      body: jsonEncode(<String, String>{
-        'nome': name,
-        'email': email,
-        'senha': senha,
-      }),
+      body: jsonEncode(<String, dynamic>{
+      'nome': nome,
+      'email': email,
+      'senha': senha,
+      'nivel': 1,
+      'pontos': 0,
+      'livro_atual': null,
+      'data_criacao': DateTime.now().toIso8601String(),
+    }),
     );
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {     
       // sucesso
-      Get.back();
-    } else {
-      // falha
+      carregamento.hide();
       showDialog(
+        // ignore: use_build_context_synchronously
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Erro'),
-            content: Text('Falha no cadastro. Por favor, tente novamente mais tarde.'),
+            title: Text('Bem vindo!'),
+            content: Text('Cadastro efetuado com sucesso!'),
             actions: <Widget>[
               TextButton(
                 child: Text('OK'),
                 onPressed: () {
                   Navigator.of(context).pop();
+                  Get.back();
                 },
               ),
             ],
           );
         },
-      );
-    }
+      );      
+    } else if (response.statusCode == 400) {
+        // falha
+        carregamento.hide();      
+        showDialog(
+          // ignore: use_build_context_synchronously
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Erro'),
+              content: Text('Já existe usuário com este email.'),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('OK'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        // falha
+        carregamento.hide();      
+        showDialog(
+          // ignore: use_build_context_synchronously
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Erro'),
+              content: Text('Falha no cadastro. Por favor, tente novamente mais tarde.'),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('OK'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }    
   }
 
   final GlobalKey<FormState> _nameFormKey = GlobalKey<FormState>();
@@ -76,6 +129,8 @@ class _CadastroState extends State<Cadastro> {
   final GlobalKey<FormState> _senhaFormKey = GlobalKey<FormState>();
   final GlobalKey<FormState> _repeteSenhaFormKey = GlobalKey<FormState>();
 
+  final TextEditingController _nomeController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
   final TextEditingController _repeteSenhaController = TextEditingController();
   
@@ -137,7 +192,8 @@ class _CadastroState extends State<Cadastro> {
                   ),
                 ],
               ),
-              child: TextFormField(                
+              child: TextFormField( 
+                controller: _nomeController,               
                 decoration: InputDecoration(
                   hintText: 'Nome',
                   filled: true,
@@ -170,7 +226,8 @@ class _CadastroState extends State<Cadastro> {
                   ),
                 ],
               ),
-              child: TextFormField(                
+              child: TextFormField(   
+                controller: _emailController,             
                 decoration: InputDecoration(
                   hintText: 'Email',
                   filled: true,
@@ -301,14 +358,14 @@ class _CadastroState extends State<Cadastro> {
               ],
             ),
             child: TextButton(
-              onPressed: () {
+              onPressed: () async {
                 bool nomeValido = _nameFormKey.currentState!.validate();
                 bool emailValido = _emailFormKey.currentState!.validate();
                 bool senhaValida = _senhaFormKey.currentState!.validate();
                 bool repeteSenhaValida = _repeteSenhaFormKey.currentState!.validate();                
 
                 if (nomeValido && emailValido && senhaValida && repeteSenhaValida) {
-                  await _registraUsuario(_nameFormKey.text, _emailFormKey.text, _senhaFormKey.text);
+                  await _registraUsuario(_nomeController.text, _emailController.text, _senhaController.text);
                 } else {
                   setState(() {
                     //Implementar estado
@@ -335,4 +392,3 @@ class _CadastroState extends State<Cadastro> {
     );
   }
 }
-
