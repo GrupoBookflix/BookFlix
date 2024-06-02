@@ -4,6 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'cadastro.dart';
 import 'package:get/get.dart';
+import 'componentes.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'principal.dart';
+
+LoadingOverlay carregamento = LoadingOverlay();
 
 class Login extends StatefulWidget {
   // ignore: use_super_parameters
@@ -16,11 +22,16 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   //logica =======================================================================================
-  bool isChecked = false;
+  
+  //caixa de seleção 'lembrar-me'
+  bool lembrar = false;
 
   final GlobalKey<FormState> _emailFormKey = GlobalKey<FormState>();
   final GlobalKey<FormState> _senhaFormKey = GlobalKey<FormState>();
 
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _senhaController = TextEditingController();
+  
   String? validateEmail(String? email) {
     
     if (email == null || email.isEmpty) {
@@ -34,6 +45,72 @@ class _LoginState extends State<Login> {
       return 'Informe um email válido';
     }
     return null;
+  }
+
+  Future<void> _loginUsuario(String email, String senha) async {
+
+    carregamento.show(context);
+
+    const String apiUrl = 'https://backend-8wht.onrender.com/login';
+
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{      
+      'email': email,
+      'senha': senha,      
+    }),
+    );
+
+    if (response.statusCode == 200) {
+      carregamento.hide();
+      Get.to(Principal());
+    } else if (response.statusCode == 404) {
+      carregamento.hide();
+      showDialog(
+          // ignore: use_build_context_synchronously
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Erro'),
+              content: Text('Usuário não encontrado. Revise email e senha'),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('OK'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+    } else if (response.statusCode == 401) {
+      carregamento.hide();
+      showDialog(
+          // ignore: use_build_context_synchronously
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Credenciais inválidas'),
+              content: Text('Email ou senha inválidos. Por favor tente novamente'),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('OK'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+    } else {
+      carregamento.hide();
+      // outra lógica para verificação de login
+    }
   }
 
   //interface =======================================================================================
@@ -100,6 +177,7 @@ class _LoginState extends State<Login> {
                 ],
               ),
               child: TextFormField(
+                controller: _emailController,
                 decoration: InputDecoration(
                   hintText: 'E-mail',
                   filled: true,
@@ -133,6 +211,7 @@ class _LoginState extends State<Login> {
                 ],
               ),
               child: TextFormField(
+                controller: _senhaController,
                 obscureText: true,
                 decoration: InputDecoration(
                   hintText: 'Senha',
@@ -143,7 +222,18 @@ class _LoginState extends State<Login> {
                     borderSide: BorderSide.none,
                   ),
                 ),
-                validator: (senha) => senha!.length < 6 ? 'A senha deve ter pelo menos 6 caracteres' : null,
+                validator: (senha) {
+                   if (senha == null || senha.isEmpty) {
+                    return 'A senha é obrigatória';
+                  } else if (senha.contains(RegExp(r"[\'\\\;\,\)\(\<\>\=\*]")) || 
+                    senha.contains(RegExp(r'[\"\\\;\,\)\(\<\>\=\*]'))) {
+                    return 'Não use caracteres inválidos: " ; , ) ( < > = *';
+                  } else if (senha.length < 6) {
+                    return 'A senha deve ter pelo menos 6 caracteres';
+                  } else {
+                    return null;
+                  }
+                },
               ),
             ),
           ),
@@ -158,10 +248,10 @@ class _LoginState extends State<Login> {
                   activeColor: Color(0xFF48a0d4),
                   checkColor: Color(0xFF48a0d4),
                   shape: CircleBorder(side: BorderSide(color: Colors.grey)),
-                  value: isChecked,
+                  value: lembrar,
                   onChanged: (value) {
                     setState(() {
-                      isChecked = value!;
+                      lembrar = value!;
                     });
                   },
                 ),
@@ -212,12 +302,12 @@ class _LoginState extends State<Login> {
               ],
             ),
             child: TextButton(
-              onPressed: () {                
+              onPressed: () async {                
                 bool emailValido = _emailFormKey.currentState!.validate();
                 bool senhaValida = _senhaFormKey.currentState!.validate();                               
 
                 if (emailValido && senhaValida) {
-                  //Processa cadastro
+                  await _loginUsuario(_emailController.text, _senhaController.text);
                 } else {
                   setState(() {
                     //Implementar estado
