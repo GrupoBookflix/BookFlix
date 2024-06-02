@@ -20,8 +20,13 @@ class Cadastro extends StatefulWidget {
 
 class _CadastroState extends State<Cadastro> {   
 
+  String sanitizaEntrada(String input) {
+    //retira caracteres que não são ('letras', 'números', 'espaços', '@' e '.')
+    return input.replaceAll(RegExp(r'[^\w\s@.]'), '');
+  }
+
   String? validateEmail(String? email) {
-    
+    //valida o email para aceitar apenas o formato correto
     if (email == null || email.isEmpty) {
       return 'Email é obrigatório';
     }    
@@ -37,6 +42,9 @@ class _CadastroState extends State<Cadastro> {
 
   Future<void> _registraUsuario(String nome, String email, String senha) async {
 
+    nome = sanitizaEntrada(nome);
+    email = sanitizaEntrada(email);
+   
     carregamento.show(context);    
 
     const String apiUrl = 'https://backend-8wht.onrender.com/usuario';
@@ -272,7 +280,18 @@ class _CadastroState extends State<Cadastro> {
                     borderSide: BorderSide.none,
                   ),
                 ),
-                validator: (senha) => senha!.length < 6 ? 'A senha deve ter pelo menos 6 caracteres' : null,
+                validator: (senha) {
+                   if (senha == null || senha.isEmpty) {
+                    return 'A senha é obrigatória';
+                  } else if (senha.contains(RegExp(r"[\'\\\;\,\)\(\<\>\=\*]")) || 
+                    senha.contains(RegExp(r'[\"\\\;\,\)\(\<\>\=\*]'))) {
+                    return 'Não use caracteres inválidos: " ; , ) ( < > = *';
+                  } else if (senha.length < 6) {
+                    return 'A senha deve ter pelo menos 6 caracteres';
+                  } else {
+                    return null;
+                  }
+                },
               ),
             ),
           ),
