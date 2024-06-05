@@ -35,6 +35,35 @@ class CustomAppBar {
   }
 }
 
+// pop aviso suspenso ------------------------------------------
+class PopAviso {
+  PopAviso({required this.key});
+
+  final Key key;
+
+  void aviso(BuildContext context, String titulo, String mensagem,{required VoidCallback acao}) {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(titulo),
+          content: Text(mensagem),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                //executa a acao fornecida
+                acao();                
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 // tela de carregamento simples ------------------------------------------
 class LoadingOverlay {
   // ignore: unused_field
