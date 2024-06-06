@@ -37,24 +37,20 @@ class CustomAppBar {
 
 // pop aviso suspenso ------------------------------------------
 class PopAviso {
-  PopAviso({required this.key});
+  late BuildContext _context;
 
-  final Key key;
-
-  void aviso(BuildContext context, String titulo, String mensagem,{required VoidCallback acao}) {
+  void aviso(String titulo, String mensagem) {
     showDialog<void>(
-      context: context,
+      context: _context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(titulo),
           content: Text(mensagem),
           actions: <Widget>[
             TextButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
-                //executa a acao fornecida
-                acao();                
               },
             ),
           ],
@@ -65,6 +61,7 @@ class PopAviso {
 }
 
 // tela de carregamento simples ------------------------------------------
+//ex: carregamento.show() para mostrar <> carregamento.hide() para esconder
 class LoadingOverlay {
   // ignore: unused_field
   late BuildContext _context;
@@ -102,11 +99,11 @@ class BotaoGradiente extends StatelessWidget {
   final double largura;
 
   const BotaoGradiente({
-    Key? key,
+    super.key,
     required this.texto,
     required this.onPressed,
     required this.largura,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -158,40 +155,40 @@ class BotaoGradiente extends StatelessWidget {
  *  Esses valores devem ser recuperados do backend
  * */
 class CaixaProgresso extends StatelessWidget {
-    final DateTime prazoData;
-    final int paginasLivro;    
-    final int paginasLidas;
-  
+  final DateTime prazoData;
+  final int paginasLivro;
+  final int paginasLidas;
+
   const CaixaProgresso({
-    Key? key,
+    super.key,
     required this.prazoData,
     required this.paginasLivro,
-    required this.paginasLidas,    
-    }) : super(key: key);
-  
+    required this.paginasLidas,
+  });
+
   int obterPrazo(DateTime prazoInicial) {
-      DateTime dataAtual = DateTime.now();      
-      Duration resultado = prazoInicial.difference(dataAtual);
-      return resultado.inDays;
-    }
+    DateTime dataAtual = DateTime.now();
+    Duration resultado = prazoInicial.difference(dataAtual);
+    return resultado.inDays;
+  }
 
   @override
   Widget build(BuildContext context) {
     final double largura = MediaQuery.of(context).size.width * 0.9;
     final double altura = largura * 0.4;
-    final double margem = largura * 0.03;    
-    
-    int paginasRestantes = paginasLivro-paginasLidas;
-    double porcentagemLeitura = (paginasLidas/paginasLivro);
-    final int prazo = obterPrazo(prazoData);    
-    
+    final double margem = largura * 0.03;
+
+    int paginasRestantes = paginasLivro - paginasLidas;
+    double porcentagemLeitura = (paginasLidas / paginasLivro);
+    final int prazo = obterPrazo(prazoData);
+
     String plural(int valor, String tipo) {
       if (valor == 1) {
         return '';
       } else {
         return tipo;
-      }     
-    };      
+      }
+    }
 
     return Center(
       //caixa
@@ -270,14 +267,15 @@ class CaixaProgresso extends StatelessWidget {
                                     children: [
                                       Row(
                                         children: [
-                                          Icon(Icons.circle,
+                                          const Icon(
+                                            Icons.circle,
                                             size: 8,
                                             color: Color(0xFF48a0d4),
                                           ),
                                           SizedBox(width: margem * 0.5),
                                           Flexible(
                                             child: Text(
-                                              "Leu: $paginasLidas página"+plural(paginasLidas,'s'),
+                                              "Leu: $paginasLidas página${plural(paginasLidas, 's')}",
                                               softWrap: true,
                                               textAlign: TextAlign.start,
                                               style: TextStyle(
@@ -299,7 +297,7 @@ class CaixaProgresso extends StatelessWidget {
                                         children: [
                                           Flexible(
                                             child: Text(
-                                              "Resta"+plural(paginasRestantes,'m')+": $paginasRestantes página"+plural(paginasRestantes,'s'),
+                                              "Resta${plural(paginasRestantes, 'm')}: $paginasRestantes página${plural(paginasRestantes, 's')}",
                                               softWrap: true,
                                               textAlign: TextAlign.end,
                                               style: TextStyle(
@@ -308,7 +306,8 @@ class CaixaProgresso extends StatelessWidget {
                                             ),
                                           ),
                                           SizedBox(width: margem * 0.5),
-                                          Icon(Icons.circle,
+                                          Icon(
+                                            Icons.circle,
                                             size: 8,
                                             color: Colors.grey[300],
                                           ),
@@ -332,7 +331,7 @@ class CaixaProgresso extends StatelessWidget {
                               const Icon(Icons.access_alarm),
                               SizedBox(height: margem * 0.5),
                               Text(
-                                "Resta"+plural(prazo,'m')+" $prazo dia"+plural(prazo,'s')+" para concluir a meta!",
+                                "Resta${plural(prazo, 'm')} $prazo dia${plural(prazo, 's')} para concluir a meta!",
                                 softWrap: true,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
