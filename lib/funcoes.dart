@@ -3,16 +3,29 @@ import 'componentes.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-//constroi a tela de carregamento
-LoadingOverlay carregamento = LoadingOverlay();
-//constroi tela de pop aviso
-PopAviso aviso = PopAviso();
-
 /*
 O objetivo deste arquivo é manter as lógicas por trás da manipulação de dados obtidos a partir de requisições ao backend;
 Não serão implementadas rotas aqui, então favor consultar este contexto no repositório do BackEnd deste projeto;
 Apesar disso as rotas serão usadas para facilitar a implementação.
 */
+
+//constroi a tela de carregamento
+LoadingOverlay carregamento = LoadingOverlay();
+
+//constroi tela de pop aviso
+PopAviso aviso = PopAviso();
+
+//url do backend > funcoes devem iterar as rotas após a última '/'
+const String apiUrl = 'https://backend-8wht.onrender.com';
+
+//variavel temporaria para armazenar dados do usuario
+Map<String, dynamic> dadosUser = {};
+//variavel temporaria para armazenar dados de livros exibidos
+Map<String, dynamic> dadosLivro = {};
+//variavel temporaria para armazenar dados do livroAtual
+Map<String, dynamic> dadosLivroAtual = {};
+//variavel temporaria para criacao de roteiros
+List<String> livrosRoteiro = [];
 
 //funcoes basicas ----------------------------------------
 
@@ -58,12 +71,6 @@ String? validatePassword(String? password) {
     return null;
   }
 }
-
-//url do backend > funcoes devem iterar as rotas após a última '/'
-const String apiUrl = 'https://backend-8wht.onrender.com';
-
-//variavel temporaria para armazenar dados do usuario
-Map<String, dynamic> dadosUser = {};
 
 //recolher dados backend ----------------------------------------
 
@@ -188,6 +195,65 @@ Future<void> atualizaUsuario(
   }
 }
 
+//definicao de generos literarios ----------------------------------------
+
+//adicionar genero para o usuario
+Future<void> adicionarGenero(String userId, String genero) async {
+  //chamar carregamento
+  try {
+    final response = await http.put(
+      Uri.parse('$apiUrl/usuario/$userId/generos'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'genero': genero,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      carregamento.hide();
+      //concluir a definicao do genero
+    } else if (response.statusCode == 400) {
+      carregamento.hide();
+      aviso.aviso('Erro', 'Este gênero já foi escolhido pelo usuário');
+    } else {
+      carregamento.hide();
+      aviso.aviso('Erro',
+          'Ocorreu um erro inesperado. Por favor tente novamente mais tarde.');
+    }
+  } catch (error) {
+    aviso.aviso('Erro', 'Erro ao adicionar gênero: $error');
+  }
+}
+
+//remover um genero para o usuário
+Future<void> removerGenero(String userId, String generoId) async {
+  //chamar tela de carregamento
+  try {
+    final response = await http.delete(
+      Uri.parse('$apiUrl/usuario/$userId/generos/$generoId'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      carregamento.hide();
+      //concluir a remoção do genero
+    } else if (response.statusCode == 404) {
+      carregamento.hide();
+      aviso.aviso('Erro', 'Este gênero não consta nas preferências do usuário');
+    } else {
+      carregamento.hide();
+      aviso.aviso('Erro',
+          'Ocorreu um erro inesperado. Por favor tente novamente mais tarde.');
+    }
+  } catch (error) {
+    aviso.aviso('Erro', 'Erro ao adicionar gênero: $error');
+  }
+}
+
 //login
 Future<void> loginUsuario(
     BuildContext context, String email, String senha) async {
@@ -224,3 +290,92 @@ Future<void> loginUsuario(
     aviso.aviso('Erro', 'Erro inesperado. Por favor tente novamente');
   }
 }
+
+//recolher dados API ----------------------------------------
+
+//recolher dados de livro openLibrary
+Future<void> buscarDadosLivro(String isbn, Map<String, dynamic> destino) async {
+  final response = await http.get(Uri.parse(
+      'https://openlibrary.org/api/books?bibkeys=ISBN:$isbn&jscmd=data&format=json'));
+
+  if (response.statusCode == 200) {
+    final bookData = json.decode(response.body)['ISBN:$isbn'];
+    //salva dados do livro recebido na Map definida
+    if (bookData != null) {
+      destino['isbn'] = isbn;
+      destino['titulo'] = bookData['title'];
+      destino['autor'] =
+          (bookData['authors'] != null && bookData['authors'].isNotEmpty)
+              ? bookData['authors'][0]['name']
+              : 'Desconhecido';
+      destino['paginas'] = bookData['number_of_pages'] ?? 0;
+      destino['ano'] = bookData['publish_date'] ?? 'Desconhecido';
+      destino['sinopse'] = bookData['description'] ?? 'Sinopse não disponível';
+      destino['genero'] =
+          (bookData['subjects'] != null && bookData['subjects'].isNotEmpty)
+              ? bookData['subjects'][0]['name']
+              : 'Gênero não disponível';
+    } else {
+      throw Exception('Livro não encontrado');
+    }
+  } else {
+    throw Exception('Falha ao buscar dados do livro');
+  }
+}
+
+/*
+Future<void> buscarIsbnPorGenero(String genero) async {
+  final response = await http.get(Uri.parse(
+      'https://www.googleapis.com/books/v1/volumes?q=subject:$genero&maxResults=40&fields=items(volumeInfo/industryIdentifiers)&key=YOUR_API_KEY'));
+
+  if (response.statusCode == 200) {
+    final booksData = json.decode(response.body);
+    final items = booksData['items'] ?? [];
+
+    for (var item in items) {
+      var industryIdentifiers = item['volumeInfo']['industryIdentifiers'] ?? [];
+      for (var identifier in industryIdentifiers) {
+        if (identifier['type'] == 'ISBN_13' || identifier['type'] == 'ISBN_10') {
+          String isbn = identifier['identifier'];
+          if (!isbnsEscolhidos.contains(isbn)) {
+            isbnsEscolhidos.add(isbn);
+            print('ISBN encontrado e adicionado: $isbn');
+            return; // Para após encontrar e adicionar um ISBN
+          }
+        }
+      }
+    }
+    print('Nenhum ISBN novo encontrado para o gênero: $genero');
+  } else {
+    throw Exception('Falha ao buscar livros do gênero $genero');
+  }
+}
+
+*/
+
+//funcoes para a logica do jogo ----------------------------------------
+
+//atribuir pontos
+void aumentaPontos(int pontos) {
+  dadosUser['pontos'] += pontos;
+  aumentaNivel();
+}
+
+//aumentar o nivel do jogador
+void aumentaNivel() {
+  //a disposição do nível pode ser adequada no futuro
+  const int base = 10;
+  const double fator = 1.3;
+
+  int nivelAtual = dadosUser['nivel'];
+  int pontosAtuais = dadosUser['pontos'];
+  int pontosNecessarios = (base * (nivelAtual * fator)).ceil();
+
+  //para subir mais de um nível se o usuário ganhar vários pontos de uma vez
+  while (pontosAtuais >= pontosNecessarios) {
+    dadosUser['nivel'] = nivelAtual++;
+    pontosNecessarios = (base * (nivelAtual * fator)).ceil();
+  }
+}
+
+//controle leitura
