@@ -1,7 +1,19 @@
+import 'package:bookflix/routes.dart';
+import 'package:bookflix/services/notification_service.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers:[
+        Provider<NotificationService>(create: (context) => NotificationService()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -13,7 +25,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
+                // This is the theme of your application.
         //
         // TRY THIS: Try running your application with "flutter run". You'll see
         // the application has a purple toolbar. Then, without quitting the app,
@@ -32,6 +44,9 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'BOOKFLIX'),
+      routes: Routes.list,
+      initialRoute: Routes.initial,
+      navigatorKey: Routes.navigatorKey,
     );
   }
 }
@@ -56,6 +71,28 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+
+ @override
+  void initState(){
+    super.initState();
+    checkNotifications();
+    showNotification();
+  }
+
+  showNotification(){
+    Provider.of<NotificationService>(context, listen: false).showLocalNotification(
+        CustomNotification(
+            id: -1,
+            title: 'Meta de leitura diária',
+            body: 'Opa! Não se esqueça de realizar a sua meta diária de 20 páginas!',
+            payload: '/home'
+        ),
+    );
+  }
+
+  checkNotifications() async {
+    await Provider.of<NotificationService>(context, listen: false).checkForNotifications();
+  }
 
   void _incrementCounter() {
     setState(() {
