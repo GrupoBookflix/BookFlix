@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'funcoes.dart';
 
 //app bar ------------------------------------------
@@ -497,49 +498,50 @@ class CaixaProgresso extends StatelessWidget {
 }
 
 //apresentacao dos dados do jogador
-class ResumoUser extends StatelessWidget {
-    final int nivel;
-    final int pontos;
-    final int livros;
 
-    const ResumoUser({
-      super.key, 
-      required this.nivel,
-      required this.pontos,
-      required this.livros
-    });
+class ResumoUser extends StatelessWidget {
+  final int nivel = dadosUser['nivel'];    
+  final int pontos = dadosUser['pontos'];   
+  final int livros = dadosLivrosLidos.length;
+  ResumoUser({super.key});  
 
   Widget buildResumoItem(IconData icon, int value, String label) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          icon,
-          size: 40,
-          color: Colors.blue,
-        ),
-        Text(
-          '$value',
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+    return Expanded(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 30,
+            color: const Color(0xFF48a0d4),
+          ),         
+          Text(
+            '$value',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),          
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16, 
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+              softWrap: true,
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.grey,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final double largura = MediaQuery.of(context).size.width * 0.9;
-    final double altura = largura * 0.3;
+    final double altura = largura * 0.4; // Aumentado um pouco a altura
 
     return Center(
       child: Container(
@@ -547,8 +549,8 @@ class ResumoUser extends StatelessWidget {
         height: altura,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,          
-          borderRadius: BorderRadius.circular(10),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),          
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -561,5 +563,83 @@ class ResumoUser extends StatelessWidget {
       ),
     );
   }
+}
 
+class Medidor extends StatelessWidget{
+  final double valor; 
+  final String? anotacao;
+
+  const Medidor({
+    super.key,
+    required this.valor,
+    this.anotacao,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.of(context).size.width * 0.6,
+      width: MediaQuery.of(context).size.width * 0.6,
+      child: SfRadialGauge(
+        axes: <RadialAxis>[
+          RadialAxis(
+            minimum: 0,
+            maximum: 100,
+            showLabels: false,
+            showTicks: false,
+            startAngle: 180,
+            endAngle: 0,
+            axisLineStyle: const AxisLineStyle(              
+              thickness: 0.2, // 20% do raio do medidor              
+            ),
+            pointers: <GaugePointer>[
+              NeedlePointer(
+                value: valor,
+                enableAnimation: true,
+                needleColor: Colors.grey,
+                needleLength: 0.6,
+                needleStartWidth: 1,
+                needleEndWidth: 3,
+                knobStyle: const KnobStyle(knobRadius: 0.05, color: Colors.grey),
+              ),
+            ],
+            ranges: <GaugeRange>[
+              GaugeRange(
+                startValue: 10,
+                endValue: 24,
+                color: Colors.grey[300],
+                sizeUnit: GaugeSizeUnit.factor,
+                startWidth: 0.01,
+                endWidth: 0.07,
+              ),
+              GaugeRange(
+                startValue: 26,
+                endValue: 49,
+                color: const Color(0xFF93dded),
+                sizeUnit: GaugeSizeUnit.factor,
+                startWidth: 0.07,
+                endWidth: 0.12,
+              ),
+              GaugeRange(
+                startValue: 51,
+                endValue: 74,
+                color: const  Color(0xFF6dbee0),
+                sizeUnit: GaugeSizeUnit.factor,
+                startWidth: 0.12,
+                endWidth: 0.17,
+              ),
+              GaugeRange(
+                startValue: 76,
+                endValue: 100,
+                color: const Color(0xFF48a0d4),
+                sizeUnit: GaugeSizeUnit.factor,
+                startWidth: 0.17,
+                endWidth: 0.22,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }

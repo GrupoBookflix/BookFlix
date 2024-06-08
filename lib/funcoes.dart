@@ -21,8 +21,6 @@ BuildContext? getAppContext() {
 //constroi a tela de carregamento
 LoadingOverlay carregamento = LoadingOverlay();
 
-//define o contexto para a construcao do widget
-
 //url do backend > funcoes devem iterar as rotas após a última '/'
 const String apiUrl = 'https://backend-8wht.onrender.com';
 
@@ -30,6 +28,8 @@ const String apiUrl = 'https://backend-8wht.onrender.com';
 Map<String, dynamic> dadosUser = {};
 //variavel temporaria para armazenar dados de livros exibidos
 Map<String, dynamic> dadosLivro = {};
+//variavel temporaria para armazenar livros ja lidos pelo usuario
+Map<String, dynamic> dadosLivrosLidos = {};
 //variavel temporaria para armazenar dados do livroAtual
 Map<String, dynamic> dadosLivroAtual = {};
 //variavel temporaria para criacao de roteiros
@@ -82,7 +82,7 @@ String? validatePassword(String? password) {
 
 //recolher dados backend ----------------------------------------
 
-//recolhe dados basicos do usuario
+//recolhe dados basicos do usuario do back end
 Future<void> recolherDados(int userId) async {
   //na operacao de login, os principais dados do usuario já são recolhidos
   //mas caso seja necessario atualizar as informacoes esta funcao pode ser usada
@@ -301,6 +301,7 @@ Future<bool> loginUsuario(
     usuario.forEach((key, value) {
       dadosUser[key] = value;
     });
+    await obterLivrosLidos(dadosUser['id']);
     carregamento.hide();
     return true;
     //ir para a pagina principal
@@ -406,4 +407,139 @@ void aumentaNivel() {
   }
 }
 
-//controle leitura
+//salva livro concluido pelo usuario ----------------------------------------------------------------
+Future<bool> salvaLivroLido(BuildContext context, String isbn) async {
+  
+  final usuarioId = dadosBasicosUser('id');
+  final dataLeitura = DateTime.now();
+
+  carregamento.show(context);
+
+  Map<String, dynamic> body = {
+    'usuario_id': usuarioId,
+    'isbn': isbn,
+    'data_leitura': dataLeitura.toIso8601String(),
+  };
+
+  try {
+    final response = await http.post(
+      Uri.parse('$apiUrl/livros-lidos'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 201) {
+      // Sucesso
+      carregamento.hide();
+      return true;
+    } else {
+      // Falha
+      carregamento.hide();
+      return false;
+    }
+  } catch (error) {
+    // Erro
+    // ignore: avoid_print
+    print('Erro ao enviar livro lido: $error');
+    return false;
+  }
+}
+
+//verifica livros ja lidos pelo usuario
+Future<void> obterLivrosLidos(int usuarioId) async {
+  
+  try {
+    final response = await http.get(
+      Uri.parse('$apiUrl/livros-lidos/$usuarioId'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    );
+
+    if (response.statusCode == 200) {  
+      final List<dynamic> data = jsonDecode(response.body);
+      dadosLivrosLidos.clear(); // Limpa os dados antigos
+      for (var livro in data) {
+        dadosLivrosLidos[livro['isbn']] = livro;
+      }
+    }
+  } catch (error) {    
+    // ignore: avoid_print
+    print('Erro ao obter livros lidos: $error');
+  }
+}
+
+//manipulacao de roteiros ----------------------------------------------------------------
+
+// criar um roteiro para o usuario
+Future<bool> criarRoteiroDeLeitura(BuildContext context, String nomeRoteiro) async {
+  // ve se o usuario esta logado
+  if (dadosUser.isEmpty || dadosUser['id'] == null) {    
+    return false;
+  }
+  carregamento.show(context);
+
+  Map<String, dynamic> body = {
+    'usuario_id': dadosUser['id'],
+    'nome': nomeRoteiro,
+    'data_criacao': DateTime.now().toString(),
+  };
+  
+  try {
+    final response = await http.post(
+      Uri.parse('$apiUrl/roteiro'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 201) {
+      //sucesso
+      carregamento.hide();
+      return true;
+    } else {
+      //falha
+      carregamento.hide();
+      return false;
+    }
+  } catch (error) {
+    // ignore: avoid_print
+    print('Erro ao criar roteiro de leitura: $error');
+    return false;
+  }
+}
+
+// adicionar livro ao roteiro
+Future<void> adicionarLivroAoRoteiro(BuildContext context, roteiroId, String isbn) async {
+  
+  carregamento.show(context);
+
+  Map<String, dynamic> body = {
+    'isbn': isbn,
+    'sequencia': 1,
+  };
+  
+  try {
+    final response = await http.post(
+      Uri.parse('$apiUrl/roteiro/$roteiroId/livro'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 201) {
+      //sucesso
+      carregamento.hide();      
+    } else {
+      //falha
+      carregamento.hide();      
+    }
+  } catch (error) {
+    // ignore: avoid_print
+    print('Erro ao adicionar livro ao roteiro de leitura: $error');
+  }
+}
