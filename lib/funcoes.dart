@@ -158,14 +158,15 @@ Future<bool> registraUsuario(
 
 //atualizar dado do usuario
 Future<void> atualizaUsuario(
-    BuildContext context,
-    id,
+    BuildContext context,    
     String? nome,
     String? email,
     String? senha,
     int? nivel,
     int? pontos,
     String? livroAtual) async {
+
+  final String id = dadosBasicosUser('id');    
   carregamento.show(context);
 
   //sanitizar entradas
@@ -213,8 +214,10 @@ Future<void> atualizaUsuario(
 //definicao de generos literarios ----------------------------------------
 
 //adicionar genero para o usuario
-Future<void> adicionarGenero(String userId, String genero) async {
-  //chamar carregamento
+Future<bool> adicionarGenero(BuildContext context, userId, String genero) async {
+  
+  carregamento.show(context);
+
   try {
     final response = await http.put(
       Uri.parse('$apiUrl/usuario/$userId/generos'),
@@ -226,22 +229,25 @@ Future<void> adicionarGenero(String userId, String genero) async {
       }),
     );
 
-    PopAviso aviso = PopAviso();
+    PopAviso aviso = PopAviso();   
 
     if (response.statusCode == 200) {
       carregamento.hide();
+      return true;
       //concluir a definicao do genero
     } else if (response.statusCode == 400) {
       carregamento.hide();
       aviso.aviso('Erro', 'Este gênero já foi escolhido pelo usuário');
+      return false;
     } else {
       carregamento.hide();
-      aviso.aviso('Erro',
-          'Ocorreu um erro inesperado. Por favor tente novamente mais tarde.');
+      aviso.aviso('Erro','Ocorreu um erro inesperado. Por favor tente novamente mais tarde.');
+      return false;
     }
   } catch (error) {
     // ignore: avoid_print
     print('Erro: ao adicionar gênero: $error');
+    return false;
   }
 }
 

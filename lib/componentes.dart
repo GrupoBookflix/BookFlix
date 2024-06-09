@@ -1,3 +1,4 @@
+import 'package:bookflix/roteiros.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'funcoes.dart';
@@ -110,9 +111,7 @@ class MenuLateral extends StatelessWidget {
 // pop aviso suspenso ------------------------------------------
 class PopAviso  {  
  
-  void aviso(String titulo, String mensagem) {
-    // ignore: avoid_print
-    print("chamando pop aviso");
+  void aviso(String titulo, String mensagem) {   
     showDialog<void>(
       context: getAppContext()!,
       builder: (BuildContext context) {
@@ -171,26 +170,26 @@ class LoadingOverlay {
 class BotaoGradiente extends StatelessWidget {
   final String texto;
   final VoidCallback onPressed;
-  final double largura;
-  final double altura;
+  final double largura;  
+  final bool ligado;
 
   const BotaoGradiente({
     super.key,
     required this.texto,
     required this.onPressed,
-    required this.largura,
-    required this.altura,
+    required this.largura,       
+    this.ligado = true,       
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: largura,
-      height: altura,
+      height: largura * 0.35,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF48a0d4), Color(0xFF93dded)],
+        gradient: LinearGradient(
+          colors: ligado ? [const Color(0xFF48a0d4), const Color(0xFF93dded)] : [Colors.grey, Colors.grey[350]!],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -204,7 +203,7 @@ class BotaoGradiente extends StatelessWidget {
         ],
       ),
       child: TextButton(        
-        onPressed: onPressed,
+        onPressed: ligado ? onPressed : null,
         style: TextButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -216,7 +215,7 @@ class BotaoGradiente extends StatelessWidget {
             texto,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 15,
+              fontSize: 16,
             ),
           ),
         ),
@@ -225,27 +224,69 @@ class BotaoGradiente extends StatelessWidget {
   }
 }
 
+//caixas de selecao interativas ------------------------------------------
+class TextoSelectBox extends StatefulWidget {
+  //usado com uma Map dicionario onde texto é key e termo é value
+  final String texto;
+  final String termo;
+  final Function(bool, String) onSelected;
+
+  const TextoSelectBox({
+    required this.texto,
+    required this.termo,
+    required this.onSelected,
+    super.key,
+  });
+
+  @override
+  // ignore: library_private_types_in_public_api
+  _TextoBoxState createState() => _TextoBoxState();
+}
+
+class _TextoBoxState extends State<TextoSelectBox> {
+  bool selected = false;
+
+  void toggleSelected() {
+    setState(() {
+      selected = !selected;
+      widget.onSelected(selected, widget.termo);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: toggleSelected,
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        margin: const EdgeInsets.all(7),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF48a0d4) : Colors.grey[400],
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: Text(
+          widget.texto,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      ),
+    );
+  }
+}
+
+
 // caixa de progresso ------------------------------------------
-/* Exemplo do construtor da CaixaProgresso:
- * CaixaProgresso(
- *  paginasLidas:10,
- *  paginasLivro:100,
- *  prazoData: DateTime(2024, 6, 30),
- * ),
- *  Esses valores devem ser recuperados do backend
- * */
 class CaixaProgresso extends StatelessWidget {
   final DateTime prazoData;
   final int paginasLivro;
   final int paginasLidas;
-  final bool livroAtual;
+  final bool livroAtual; 
 
   const CaixaProgresso({
     super.key,
     required this.prazoData,
     required this.paginasLivro,
     required this.paginasLidas,
-    required this.livroAtual,
+    required this.livroAtual,    
   });
 
   int obterPrazo(DateTime prazoInicial) {
@@ -433,7 +474,7 @@ class CaixaProgresso extends StatelessWidget {
                   BotaoGradiente(
                     texto: "Retomar",
                     largura: largura * 0.3,
-                    altura: largura * 0.3,
+                    //altura: largura * 0.3,
                     onPressed: () {
                       // rota para a tela de leitura
                     },
@@ -480,10 +521,27 @@ class CaixaProgresso extends StatelessWidget {
                       BotaoGradiente(
                         texto: "Novo Roteiro",
                         onPressed: () {
-                          // Ação para escolher novo roteiro
+                          bool possuiGenero = dadosBasicosUser('generos').isNotEmpty;
+                          if (possuiGenero) {
+                            // ignore: avoid_print
+                            print('usuario tem generos');
+                            /*
+                            Navigator.pushReplacement(
+                              // ignore: use_build_context_synchronously
+                              context,
+                              MaterialPageRoute(builder: (context) => Roteiros()),  
+                            );
+                            */
+                          } else {
+                            Navigator.push(
+                            // ignore: use_build_context_synchronously
+                            context,
+                            MaterialPageRoute(builder: (context) => const SelecaoGenero()),
+                          );
+                          }                          
                         },
                         largura: largura * 0.5,
-                        altura: largura * 0.1,
+                        //altura: largura * 0.1,
                       ),
                     ],
                   ),

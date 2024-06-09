@@ -22,6 +22,7 @@ class _PrincipalState extends State<Principal> {
         children: [
           SingleChildScrollView(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                 // Caixa de progresso do livro atual
@@ -41,16 +42,16 @@ class _PrincipalState extends State<Principal> {
                 SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                 ResumoUser(),  
                 SizedBox(height: MediaQuery.of(context).size.height * 0.05),              
-                Container(
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'Você leu x páginas esta semana!',
+                const Center(                  
+                  child: Text(
+                    'Você leu 0 páginas esta semana! Continue lendo para receber pontos e aumentar seu nível!',
+                    textAlign: TextAlign.center,
                     style: TextStyle(                      
                       fontSize: 14,                      
                     ),
                   ),
                 ),
-                SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                 const Medidor(valor: 0), //implementar a logica das paginas               
               ],
             ),
