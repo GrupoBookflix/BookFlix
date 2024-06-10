@@ -1,4 +1,6 @@
+import 'package:bookflix/models/livro.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'componentes.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -381,6 +383,67 @@ Future<void> buscarIsbnPorGenero(String genero) async {
 }
 
 */
+
+Future<List<Livro>> buscarLivrosPorGenero(String genero, int limite) async {
+  List<Livro> livros = [];
+
+  final response = await http.get(Uri.parse(
+      'https://openlibrary.org/search.json?subject=$genero&sort=random&limit=$limite'));
+
+  if (response.statusCode == 200) {
+    print('BUSCOU--->' + genero);
+
+    final booksDataArray = json.decode(response.body)['docs'];
+
+    if (booksDataArray != null) {
+      for (var book in booksDataArray) {
+        livros.add(
+            Livro(isbn: book['isbn'][0],
+                nome: book['title'],
+                genero: genero,
+                imageId: book['cover_i'] == null ? "7010041" : book['cover_i'].toString()
+            )
+        );
+      }
+    } else {
+      print('ERRO1');
+      throw Exception('Livros não encontrados');
+    }
+  } else {
+    print('ERRO2');
+    throw Exception('Falha ao buscar livros');
+  }
+  return livros;
+}
+
+Future<List<Map<String, dynamic>>> montaRoteiros(BuildContext context) async {
+  print("---------------------START-----------------------");
+
+  //carregamento.show(context);
+  List<String> generos = ['horror', 'romance', 'adventure']; // pegar generos favoritos do usuario
+  List<Map<String, dynamic>> scriptList = [];
+
+  Map<String, dynamic> roteiro1 = {};
+  Map<String, dynamic> roteiro2 = {};
+  Map<String, dynamic> roteiro3 = {};
+
+  // Roteiro list
+  for (var genero in generos) {
+    List<Livro> roteirosDoGenero = await buscarLivrosPorGenero(genero, 9);
+    roteiro1[genero] = roteirosDoGenero.take(3).toList();
+    roteiro2[genero] = roteirosDoGenero.skip(3).take(3).toList();
+    roteiro3[genero] = roteirosDoGenero.skip(6).take(3).toList();
+  }
+
+  scriptList.add(roteiro1);
+  scriptList.add(roteiro2);
+  scriptList.add(roteiro3);
+
+  print("---------------------END-----------------------");
+  //carregamento.hide();
+
+  return scriptList;
+}
 
 //funcoes para a logica do jogo ----------------------------------------
 

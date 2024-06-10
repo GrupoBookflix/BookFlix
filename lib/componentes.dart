@@ -1,3 +1,4 @@
+import 'package:bookflix/script_selection.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'funcoes.dart';
@@ -481,6 +482,10 @@ class CaixaProgresso extends StatelessWidget {
                         texto: "Novo Roteiro",
                         onPressed: () {
                           // Ação para escolher novo roteiro
+                          Navigator.pushReplacement( // Substitui a página atual pela página principal
+                            context,
+                            MaterialPageRoute(builder: (context) => ScriptSelectionController()),
+                          );
                         },
                         largura: largura * 0.5,
                         altura: largura * 0.1,
