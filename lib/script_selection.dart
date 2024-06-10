@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 //constroi a tela de carregamento
 LoadingOverlay carregamento = LoadingOverlay();
 
-void main() {
+/*void main() {
   runApp(const ScriptSelectionController());
-}
+}*/
 
 class ScriptSelectionController extends StatelessWidget {
   const ScriptSelectionController({Key? key}) : super(key: key);
@@ -41,7 +41,6 @@ class _ScriptTabState extends State<ScriptTab> {
 
   @override
   void initState() {
-    print('-----------INIT STATE------------');
     scriptList = montaRoteiros(context);
   }
 
@@ -188,7 +187,7 @@ class _ScriptTabState extends State<ScriptTab> {
                     BotaoGradiente(
                       texto: "Selecionar Roteiro",
                       onPressed: () {
-                        scriptList = montaRoteiros(context);
+                        //scriptList = montaRoteiros(context); teste
                         // Seleciona Roteiro
                         // tabController.index
                       },

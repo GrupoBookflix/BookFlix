@@ -388,37 +388,41 @@ Future<List<Livro>> buscarLivrosPorGenero(String genero, int limite) async {
   List<Livro> livros = [];
 
   final response = await http.get(Uri.parse(
-      'https://openlibrary.org/search.json?subject=$genero&sort=random&limit=$limite'));
+      'https://openlibrary.org/search.json?subject=$genero&sort=random&limit=$limite&fields=title,isbn,cover_i'));
 
   if (response.statusCode == 200) {
-    print('BUSCOU--->' + genero);
 
     final booksDataArray = json.decode(response.body)['docs'];
-
     if (booksDataArray != null) {
+
       for (var book in booksDataArray) {
-        livros.add(
-            Livro(isbn: book['isbn'][0],
-                nome: book['title'],
-                genero: genero,
-                imageId: book['cover_i'] == null ? "7010041" : book['cover_i'].toString()
-            )
+
+        if(book['isbn'] == null || book['title'] == null){
+          print('-------ISBN OR TITLE NULL-------');
+          print(book);
+        }
+
+        Livro livro = Livro(
+            isbn: book['isbn'][0],
+            nome: book['title'],
+            genero: genero,
+            imageId: book['cover_i'] == null ? "7010041" : book['cover_i'].toString()
         );
+
+        livros.add(livro);
       }
     } else {
-      print('ERRO1');
       throw Exception('Livros não encontrados');
     }
   } else {
-    print('ERRO2');
     throw Exception('Falha ao buscar livros');
   }
+
   return livros;
 }
 
 Future<List<Map<String, dynamic>>> montaRoteiros(BuildContext context) async {
-  print("---------------------START-----------------------");
-
+  // O carregamento não funciona aqui
   //carregamento.show(context);
   List<String> generos = ['horror', 'romance', 'adventure']; // pegar generos favoritos do usuario
   List<Map<String, dynamic>> scriptList = [];
@@ -439,9 +443,7 @@ Future<List<Map<String, dynamic>>> montaRoteiros(BuildContext context) async {
   scriptList.add(roteiro2);
   scriptList.add(roteiro3);
 
-  print("---------------------END-----------------------");
   //carregamento.hide();
-
   return scriptList;
 }
 
