@@ -1,7 +1,6 @@
 import 'package:bookflix/funcoes.dart';
 import 'package:flutter/material.dart';
-//import 'login.dart';
-import 'sessao_leitura.dart';
+import 'login.dart';
 import 'package:get/get.dart';
 
 void main() {
@@ -19,7 +18,7 @@ class MyApp extends StatelessWidget {
     // ignore: prefer_const_constructors
     return GetMaterialApp(      
       title: 'Bookflix',      
-      home: const SessaoLeitura(),      
+      home: const Login(),      
     );
   }
 }
