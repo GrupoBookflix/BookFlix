@@ -1,10 +1,11 @@
 . Fazer a tela de controle de leitura
-    Recebe o livro atual, se houver, implementa o cronometro,
-    Recebe pagina final lida,
-    Atualiza o backend
+    Atualizar recebendo dados do backend,    
+    Atualizar enviando dados para o back end ao fim
 
 . Fazer a logica de enviar os dados do prazo escolhido para o roteiro e verificacao do prazo restante
 na CaixaProgresso
 
 . Fazer a lógica de conceder pontos após o termino da leitura.
+
+
 
