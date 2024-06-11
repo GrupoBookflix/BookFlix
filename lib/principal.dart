@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'componentes.dart';
 import 'funcoes.dart';
-
+//import './widgets/menu_lateral.dart';
 class Principal extends StatefulWidget {
   const Principal({super.key});
 

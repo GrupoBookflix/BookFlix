@@ -1,7 +1,8 @@
-import 'dart:io';
+//import 'dart:io';
+//import 'Funcoes/selecionar_imagem.dart' as Funcoes;
+import 'package:bookflix/componentes.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import './funcoes/selecionar_imagem.dart' as funcoes;
+//import 'package:image_picker/image_picker.dart';
 
 class Conta extends StatefulWidget {
   const Conta({super.key});
@@ -11,25 +12,14 @@ class Conta extends StatefulWidget {
 }
 
 class _ContaState extends State<Conta> {
-  File? imagemSelecionada;
-  final TextEditingController _nomeController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-
-  Future<void> _selecionarImagem() async {
-    File? imagem = await funcoes.selecionarImagem(ImageSource.gallery);
-    if (imagem != null) {
-      setState(() {
-        imagemSelecionada = imagem;
-      });
-    }
-  }
-
+  //File? imagemSelecionada;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bookflix'),
       ),
+      drawer: const MenuLateral(),
       body: Center(
         child: Form(
           child: Column(
@@ -38,14 +28,17 @@ class _ContaState extends State<Conta> {
               Stack(
                 children: [
                   InkWell(
-                    onTap: _selecionarImagem,
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundImage: imagemSelecionada != null
-                          ? FileImage(imagemSelecionada!)
-                          : const AssetImage('assets/images/user.png') as ImageProvider,
-                    ),
-                  ),
+                      onTap: () async {
+                        /*
+                        imagemSelecionada =
+                            await Funcoes.selecionarImagem(ImageSource.gallery);
+                        // Faça algo com a imagemSelecionada, como exibir ou processar
+                        // */
+                      },
+                      child:const CircleAvatar(
+                        radius: 50, // Defina o tamanho desejado aqui
+                        backgroundImage: AssetImage('assets/images/user.png'),
+                      )),
                   Positioned(
                     bottom: 0,
                     right: 0,
@@ -71,36 +64,40 @@ class _ContaState extends State<Conta> {
               const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: TextFormField(
-                  controller: _nomeController,
-                  decoration: const InputDecoration(labelText: 'Usuário'),
-                ),
+                child: campoNome(),
               ),
               const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'E-mail'),
-                ),
+                child: campoEmail(),
               ),
               const SizedBox(height: 20),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Ação ao pressionar o botão
-                    print('Alterar senha pressionado');
-                  },
-                  child: const Text('Alterar senha'),
-                ),
-              ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/alterarsenha');
+                    },
+                    child: const Text('Alterar senha'),
+                  ))
             ],
           ),
         ),
       ),
     );
   }
+}
+
+Widget campoNome() {
+  return TextFormField(
+    decoration: const InputDecoration(labelText: 'Usuário'),
+  );
+}
+
+Widget campoEmail() {
+  return TextFormField(
+    decoration: const InputDecoration(labelText: 'E-mail'),
+  );
 }
 
 void main() {

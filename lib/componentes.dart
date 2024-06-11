@@ -2,7 +2,7 @@ import 'package:bookflix/roteiros.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'funcoes.dart';
-
+import 'package:flutter/services.dart';
 //app bar ------------------------------------------
 class CustomAppBar {
   static AppBar build(BuildContext context) {
@@ -21,7 +21,7 @@ class CustomAppBar {
         )
       ),
       title: Image.asset(
-        'assets/imagens/booki.png',
+        'assets/images/booki.png',
         height: 60,
       ),
       centerTitle: true,
@@ -52,26 +52,30 @@ class ItemMenu {
 }
 
 //menu suspenso ------------------------------------------
+
 class MenuLateral extends StatelessWidget {
   const MenuLateral({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
+      backgroundColor: const Color.fromARGB(255, 39, 39, 39),
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
            DrawerHeader(
             // ignore: prefer_const_constructors
             decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 2, 43, 77),
+               border: const Border(
+                  bottom: BorderSide(color: Color.fromARGB(255, 59, 160, 207)) ,
+                ),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const CircleAvatar(
                   radius: 40,  // Tamanho do círculo
-                  backgroundImage: AssetImage('assets/imagens/user.png'),                 
+                  backgroundImage: AssetImage('assets/images/user.png'),                 
                 ),
                 const SizedBox(height: 10),  // Espaçamento entre a imagem e o texto
                 Text(
@@ -84,12 +88,59 @@ class MenuLateral extends StatelessWidget {
               ],
             ),
           ),
-          ...buildMenuItems(context),
+          //...buildMenuItems(context),
+          ListTile(
+            title: const Text('Início',textAlign: TextAlign.center,  style: TextStyle(color: Colors.white)),
+            onTap: () {
+              Navigator.pop(context); // Fecha o menu lateral
+              Navigator.pushNamed(context, '/home'); //fechar o aplicativo
+            },
+          ),
+          ListTile(
+            title: const Text('Conta', textAlign: TextAlign.center,  style: TextStyle(color: Colors.white)),
+            onTap: () {
+              Navigator.pop(context); // Fecha o menu lateral
+              Navigator.pushNamed(context, '/conta'); 
+            }
+          ),
+          ListTile(
+            title: const Text('Alterar Roteiro', textAlign: TextAlign.center,  style: TextStyle(color: Colors.white)),
+            onTap: () {
+              Navigator.of(context).pushReplacementNamed('/alterarRoteiro');
+            },
+          ),
+          ListTile(
+            title: const Text('Histórico de Leitura',textAlign: TextAlign.center,  style: TextStyle(color: Colors.white)),
+            onTap: () {
+              Navigator.of(context).pushReplacementNamed('/historico');
+            },
+          ),
+         
+          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+          ListTile(
+            title: const Text('Mudar de Conta',textAlign: TextAlign.center,  style: TextStyle(color: Colors.white)),
+            onTap: () {
+               Navigator.pop(context); // Fecha o menu lateral
+              Navigator.pushNamed(context, '/login'); 
+            },
+          ),
+          ListTile(
+            title: const Text('Sair',textAlign: TextAlign.center,  style: TextStyle(color: Colors.white)),
+            onTap: () {
+             SystemNavigator.pop(); // Sai do aplicativo //fechar o aplicativo
+            },
+          ),
+          
+          const Divider( // Adiciona uma linha
+            color: Color.fromARGB(255, 59, 160, 207), // Cor da linha
+            thickness: 2, // Espessura da linha
+          ),
         ],
       ),
     );
   }
 
+/*
   // Método para construir as opções do menu
   List<Widget> buildMenuItems(BuildContext context) {
     List<ItemMenu> menuItems = [
@@ -106,6 +157,7 @@ class MenuLateral extends StatelessWidget {
       );
     }).toList();
   }
+*/
 }
 
 // pop aviso suspenso ------------------------------------------

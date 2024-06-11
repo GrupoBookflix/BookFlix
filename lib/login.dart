@@ -66,7 +66,7 @@ class _LoginState extends State<Login> {
             alignment: Alignment.center,
             width: MediaQuery.of(context).size.height * 0.2,
             height: MediaQuery.of(context).size.height * 0.2,
-            child: Image.asset('assets/imagens/booki.png'),
+            child: Image.asset('assets/images/booki.png'),
           ),
           SizedBox(height: MediaQuery.of(context).size.height * 0.03),
           //formulario email ----------------------------------------------------------------------
