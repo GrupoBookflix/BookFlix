@@ -26,7 +26,7 @@ class _PrincipalState extends State<Principal> {
               children: [
                 SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                 // Caixa de progresso do livro atual
-                CaixaProgresso(prazoData: DateTime.now(), paginasLivro: 150, paginasLidas: 10, livroAtual: false), // implementar lógica                
+                CaixaProgresso(prazoData: DateTime.now(), paginasLivro: 150, paginasLidas: 10, livroAtual: true), // implementar lógica                
                 SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                 Container(
                   alignment: Alignment.center,

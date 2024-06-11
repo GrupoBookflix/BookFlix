@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'componentes.dart';
 import 'package:http/http.dart' as http;
@@ -30,7 +32,7 @@ Map<String, dynamic> dadosUser = {};
 Map<String, dynamic> dadosLivro = {};
 //variavel temporaria para armazenar livros ja lidos pelo usuario
 Map<String, dynamic> dadosLivrosLidos = {};
-//variavel temporaria para armazenar dados do livroAtual
+//variavel temporaria para armazenar dados do livro atual do roteiro
 Map<String, dynamic> dadosLivroAtual = {};
 //variavel temporaria para criacao de roteiros
 List<String> livrosRoteiro = [];
@@ -92,7 +94,6 @@ Future<void> recolherDados(int userId) async {
       'Content-Type': 'application/json; charset=UTF-8',
     },
   );
-
   if (response.statusCode == 200) {
     //sucesso: armazena na variavel temporaria
     dadosUser = json.decode(response.body);
@@ -101,11 +102,29 @@ Future<void> recolherDados(int userId) async {
     //chamar PopAViso
     throw Exception('Falha ao carregar dados do usuário');
   }
+
+  final response2 = await http.get(
+    Uri.parse('$apiUrl/progresso/usuario/$userId'),
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    },
+  );
+  if (response2.statusCode == 200) {
+    //sucesso: armazena na variavel temporaria
+    dadosLivroAtual = json.decode(response2.body);
+  } else {
+    //falha
+    //chamar PopAViso
+    throw Exception('Falha ao carregar dados do progresso');
+  }
 }
 
 //retornar dado especifico do usuario
 String dadosBasicosUser(String dado) {
   return dadosUser[dado]?.toString() ?? '';
+}
+String dadosBasicosLivroAtual(String dado) {
+  return dadosLivroAtual[dado]?.toString() ?? '';
 }
 
 //enviar dados backend ----------------------------------------
@@ -244,8 +263,7 @@ Future<bool> adicionarGenero(BuildContext context, userId, String genero) async 
       aviso.aviso('Erro','Ocorreu um erro inesperado. Por favor tente novamente mais tarde.');
       return false;
     }
-  } catch (error) {
-    // ignore: avoid_print
+  } catch (error) {    
     print('Erro: ao adicionar gênero: $error');
     return false;
   }
@@ -275,8 +293,7 @@ Future<void> removerGenero(String userId, String generoId) async {
       aviso.aviso('Erro',
           'Ocorreu um erro inesperado. Por favor tente novamente mais tarde.');
     }
-  } catch (error) {
-    // ignore: avoid_print
+  } catch (error) {    
     print('Erro: ao adicionar gênero: $error');
   }
 }
@@ -307,6 +324,7 @@ Future<bool> loginUsuario(
     usuario.forEach((key, value) {
       dadosUser[key] = value;
     });
+    // ignore: use_build_context_synchronously
     await obterLivrosLidos(dadosUser['id']);
     carregamento.hide();
     return true;
@@ -329,7 +347,10 @@ Future<bool> loginUsuario(
 //recolher dados API ----------------------------------------
 
 //recolher dados de livro openLibrary
-Future<void> buscarDadosLivro(String isbn, Map<String, dynamic> destino) async {
+Future<void> buscarDadosLivro(BuildContext context, String isbn, Map<String, dynamic> destino) async {
+  
+  carregamento.show(context);
+
   final response = await http.get(Uri.parse(
       'https://openlibrary.org/api/books?bibkeys=ISBN:$isbn&jscmd=data&format=json'));
 
@@ -353,7 +374,9 @@ Future<void> buscarDadosLivro(String isbn, Map<String, dynamic> destino) async {
     } else {
       throw Exception('Livro não encontrado');
     }
+    carregamento.hide();
   } else {
+    carregamento.hide();
     throw Exception('Falha ao buscar dados do livro');
   }
 }
@@ -446,16 +469,16 @@ Future<bool> salvaLivroLido(BuildContext context, String isbn) async {
       return false;
     }
   } catch (error) {
-    // Erro
-    // ignore: avoid_print
+    // Erro    
+    carregamento.hide(); 
     print('Erro ao enviar livro lido: $error');
     return false;
   }
 }
 
 //verifica livros ja lidos pelo usuario
-Future<void> obterLivrosLidos(int usuarioId) async {
-  
+Future<void> obterLivrosLidos(usuarioId) async {
+    
   try {
     final response = await http.get(
       Uri.parse('$apiUrl/livros-lidos/$usuarioId'),
@@ -469,10 +492,9 @@ Future<void> obterLivrosLidos(int usuarioId) async {
       dadosLivrosLidos.clear(); // Limpa os dados antigos
       for (var livro in data) {
         dadosLivrosLidos[livro['isbn']] = livro;
-      }
+      }       
     }
-  } catch (error) {    
-    // ignore: avoid_print
+  } catch (error) {          
     print('Erro ao obter livros lidos: $error');
   }
 }
@@ -511,8 +533,8 @@ Future<bool> criarRoteiroDeLeitura(BuildContext context, String nomeRoteiro) asy
       carregamento.hide();
       return false;
     }
-  } catch (error) {
-    // ignore: avoid_print
+  } catch (error) {    
+    carregamento.hide(); 
     print('Erro ao criar roteiro de leitura: $error');
     return false;
   }
@@ -544,8 +566,77 @@ Future<void> adicionarLivroAoRoteiro(BuildContext context, roteiroId, String isb
       //falha
       carregamento.hide();      
     }
-  } catch (error) {
-    // ignore: avoid_print
+  } catch (error) {  
+    carregamento.hide(); 
     print('Erro ao adicionar livro ao roteiro de leitura: $error');
+  }
+}
+
+//controle do progresso ----------------------------------------------------------------
+
+//novo registro do progresso
+Future<void> criarEntradaProgresso(BuildContext context, String isbn) async {
+  
+  carregamento.show(context);
+
+  Map<String, dynamic> body = {
+    'usuario_id': dadosBasicosUser('id'),
+    'livro_atual': isbn,
+    'data_inicio': DateTime.now().toIso8601String(),
+  };
+
+  try {
+    final response = await http.post(
+      Uri.parse('$apiUrl/progresso'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 201) {
+      // Sucesso      
+    } else {
+      // Falha      
+    }
+  } catch (error) {    
+    print('Erro ao criar entrada de progresso: $error');
+  }
+}
+
+//atualizar progresso
+Future<void> atualizarProgresso(DateTime? dataPrazo, DateTime? dataInicio, DateTime? dataUltimaLeitura, int? ultimaPaginaLida, int? tempoGasto, int? totalPaginasLidas) async {
+
+  Map<String, dynamic> body = {
+    'id': dadosLivroAtual['id'],
+    'usuario_id' : dadosBasicosUser('id'),
+    'livro_atual' : dadosBasicosLivroAtual('isbn'),
+    if (dataPrazo != null) 'data_prazo': dataPrazo,
+    if (dataInicio != null) 'data_inicio': dataInicio,
+    if (dataUltimaLeitura != null) 'data_ultima_leitura': dataUltimaLeitura,
+    if (ultimaPaginaLida != null) 'ultima_pagina_lida': ultimaPaginaLida,
+    if (tempoGasto != null) 'tempo_gasto': tempoGasto,
+    if (totalPaginasLidas != null) 'total_paginas_lidas': totalPaginasLidas,  
+  };
+
+  try {
+    final response = await http.put(
+      Uri.parse('$apiUrl/progresso/${dadosBasicosLivroAtual('id')}'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      // Sucesso
+      print('Entrada de progresso atualizada com sucesso');
+    } else {
+      // Falha
+      print('Falha ao atualizar entrada de progresso: ${response.body}');
+    }
+  } catch (error) {
+    // Erro
+    print('Erro ao atualizar entrada de progresso: $error');
   }
 }

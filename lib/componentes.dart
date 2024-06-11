@@ -163,7 +163,14 @@ class MenuLateral extends StatelessWidget {
 // pop aviso suspenso ------------------------------------------
 class PopAviso  {  
  
-  void aviso(String titulo, String mensagem) {   
+  void aviso(
+    String titulo,
+    String mensagem,
+    {bool?
+    cancelar = false,
+    String textoBotao = 'OK',
+    VoidCallback? okPressed
+    }) {   
     showDialog<void>(
       context: getAppContext()!,
       builder: (BuildContext context) {
@@ -172,9 +179,20 @@ class PopAviso  {
           content: Text(mensagem),
           actions: <Widget>[
             TextButton(
-              child: const Text('OK'),
+              child: Text(textoBotao),
               onPressed: () {
-                Navigator.of(context).pop();
+                if (okPressed != null) {
+                  okPressed();                 
+                } else {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+            if (cancelar ?? false)
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () {
+                Navigator.pop(context);
               },
             ),
           ],
@@ -183,6 +201,44 @@ class PopAviso  {
     );
   }
 }
+
+/*
+//confirmacao se o usuario usar o botao voltar nativo
+Future<void> mostrarConfirmacao(BuildContext context, String titulo, String mensagem, VoidCallback onPopInvoked) {
+  Completer<void> completer = Completer<void>();
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text(titulo),
+        content: Text(mensagem),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true); // Retorna true se confirmado
+            },
+            child: const Text('Confirmar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(false); // Retorna false se cancelado
+            },
+            child: const Text('Cancelar'),
+          ),
+        ],
+      );
+    },
+  ).then((result) {
+    completer.complete();
+    if (result != null && result) {
+      onPopInvoked();
+    }
+  });
+
+  return completer.future;
+}
+*/
 
 // tela de carregamento simples ------------------------------------------
 class LoadingOverlay {
@@ -220,16 +276,22 @@ class LoadingOverlay {
 
 //botao do tema ------------------------------------------
 class BotaoGradiente extends StatelessWidget {
-  final String texto;
+  final String? texto;
+  final double? tamanhoFonte;
+  final Icon? icone;  
   final VoidCallback onPressed;
+  final double? altura;
   final double largura;  
   final bool ligado;
 
   const BotaoGradiente({
     super.key,
-    required this.texto,
+    this.texto,
+    this.tamanhoFonte,
+    this.icone,    
     required this.onPressed,
     required this.largura,       
+    this.altura,
     this.ligado = true,       
   });
 
@@ -237,7 +299,7 @@ class BotaoGradiente extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: largura,
-      height: largura * 0.35,
+      height: altura ?? largura * 0.35,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
@@ -263,11 +325,11 @@ class BotaoGradiente extends StatelessWidget {
           padding: const EdgeInsets.all(0),
         ),
         child: Center(
-          child: Text(
-            texto,
-            style: const TextStyle(
+          child: icone ?? Text(
+            texto.toString(),
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 16,
+              fontSize: tamanhoFonte ?? 16,
             ),
           ),
         ),
@@ -325,7 +387,6 @@ class _TextoBoxState extends State<TextoSelectBox> {
   }
 }
 
-
 // caixa de progresso ------------------------------------------
 class CaixaProgresso extends StatelessWidget {
   final DateTime prazoData;
@@ -358,14 +419,6 @@ class CaixaProgresso extends StatelessWidget {
     int paginasRestantes = paginasLivro - paginasLidas;
     double porcentagemLeitura = (paginasLidas / paginasLivro);
     final int prazo = obterPrazo(prazoData);
-
-    String plural(int valor, String tipo) {
-      if (valor == 1) {
-        return '';
-      } else {
-        return tipo;
-      }
-    }
 
     return Center(
       //caixa
@@ -452,7 +505,7 @@ class CaixaProgresso extends StatelessWidget {
                                           SizedBox(width: margem * 0.5),
                                           Flexible(
                                             child: Text(
-                                              "Leu: $paginasLidas página${plural(paginasLidas, 's')}",
+                                              "Leu: $paginasLidas página${paginasLidas != 1 ? 's' : ''}",
                                               softWrap: true,
                                               textAlign: TextAlign.start,
                                               style: TextStyle(
@@ -474,7 +527,7 @@ class CaixaProgresso extends StatelessWidget {
                                         children: [
                                           Flexible(
                                             child: Text(
-                                              "Resta${plural(paginasRestantes, 'm')}: $paginasRestantes página${plural(paginasRestantes, 's')}",
+                                             "Resta${paginasRestantes != 1 ? 'm' : ''}: $paginasRestantes página${paginasRestantes != 1 ? 's' : ''}",
                                               softWrap: true,
                                               textAlign: TextAlign.end,
                                               style: TextStyle(
@@ -508,7 +561,7 @@ class CaixaProgresso extends StatelessWidget {
                               const Icon(Icons.access_alarm),
                               SizedBox(height: margem * 0.5),
                               Text(
-                                "Resta${plural(prazo, 'm')} $prazo dia${plural(prazo, 's')} para concluir a meta!",
+                                "Resta${prazo !=1 ? 'm': ''} $prazo dia${prazo !=1 ? 's': ''} para concluir a meta!",
                                 softWrap: true,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
@@ -752,4 +805,28 @@ class Medidor extends StatelessWidget{
       ),
     );
   }
+}
+
+class AnuncioExemplo extends StatelessWidget {
+  final double altura;
+
+  const AnuncioExemplo({
+    required this.altura,
+    super.key
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(  
+      alignment: Alignment.center,  
+      color: Colors.grey,
+      width: MediaQuery.of(context).size.width,
+      height: altura,
+      child: const Text(
+        'anúncio',
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+  
 }
