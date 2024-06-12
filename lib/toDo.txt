@@ -1,7 +1,3 @@
-. Fazer a tela de controle de leitura
-    Atualizar recebendo dados do backend,    
-    Atualizar enviando dados para o back end ao fim
-
 . Fazer a logica de enviar os dados do prazo escolhido para o roteiro e verificacao do prazo restante
 na CaixaProgresso
 

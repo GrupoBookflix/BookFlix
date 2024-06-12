@@ -1,5 +1,4 @@
-// ignore_for_file: avoid_print, library_private_types_in_public_api
-
+// ignore_for_file: avoid_print, use_key_in_widget_constructors, prefer_const_constructors, prefer_const_literals_to_create_immutables, library_private_types_in_public_api
 import 'package:bookflix/componentes.dart';
 import 'package:flutter/material.dart';
 import 'package:bookflix/models/livro.dart';
@@ -7,133 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:ionicons/ionicons.dart';
 import 'dart:convert';
 import 'principal.dart';
-import 'funcoes.dart';
 
+//constroi a tela de carregamento
 LoadingOverlay carregamento = LoadingOverlay();
-
-//selecao de generos ---------------------------------------------------
-
-class SelecaoGenero extends StatefulWidget {
-  // ignore: use_super_parameters
-  const SelecaoGenero({Key? key}) : super(key: key);
-
-  @override  
-  _SelecaoGenero createState() => _SelecaoGenero();
-}
-
-class _SelecaoGenero extends State<SelecaoGenero> { 
-
-  List<String> generosSelecionados = [];
-
-  void generosSelect(bool selected, String termo) {
-    setState(() {
-      if (selected) {
-        generosSelecionados.add(termo);
-      } else {
-        generosSelecionados.remove(termo);
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    //lista de generos    
-    final Map<String, String> generoTermos = {      
-      'Ficção': 'fiction',
-      'Fantasia': 'fantasy',
-      'Mistério': 'mystery',
-      'Romance': 'romance',
-      'Terror': 'terror',
-      'Aventura': 'adventure',
-      'Drama': 'drama',
-      'Ficção Científica': 'science fiction',
-      'Comédia': 'comedy',
-      'Poesia': 'poetry',
-      'Clássico': 'classical',
-      'Policial': 'police',
-      'Histórico': 'historic',
-      'Biografia': 'biography',
-      'Religião': 'religion',
-      'Infanto-Juvenil': 'juvenile',
-      // adicionar mais se necessario
-    };
-    return Scaffold(  
-      appBar: CustomAppBar.build(context),
-      drawer: const MenuLateral(),  
-      backgroundColor: Colors.white,  
-      body: SingleChildScrollView(
-        child: Column (
-          children: [               
-            SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-            Container(
-              alignment: Alignment.center,
-              child: Text(
-                'Do que você gosta, ${dadosBasicosUser('nome').isNotEmpty == true ? dadosBasicosUser('nome') : 'leitor(a)'}?',
-                style: const TextStyle(
-                  color: Color(0xFF48a0d4),
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-            const Center(                  
-              child: Text(
-                'Para construir seus roteiros de leitura, selecione \n3 gêneros literários de sua preferência. \nVocê pode mudar suas preferências em seu perfil.',
-                textAlign: TextAlign.center,
-                style: TextStyle(                      
-                  fontSize: 14,                      
-                ),
-              ),
-            ),
-            SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.height * 0.03),
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                spacing: MediaQuery.of(context).size.height * 0.01,
-                children: generoTermos.entries.map((entry) {
-                  return TextoSelectBox(
-                    texto: entry.key,
-                    termo: entry.value,
-                    onSelected: generosSelect,
-                  );
-                }).toList(),
-              ),
-            ),
-            SizedBox(height: MediaQuery.of(context).size.height * 0.05),
-            BotaoGradiente(texto: 'Confirmar',
-            onPressed: () async {              
-              bool sucesso = await adicionarGenero(context, dadosBasicosUser('id'),'genero');
-              if (sucesso) {                
-                // ignore: use_build_context_synchronously
-                Navigator.pop(context);              
-              }                            
-            },
-            largura: MediaQuery.of(context).size.width * 0.35,
-            ligado: generosSelecionados.length == 3),
-            SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-            Visibility(
-              visible: generosSelecionados.length > 3,
-              child: const Center(                  
-                child: Text(
-                  'Escolha apenas 3 gêneros!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(                      
-                    fontSize: 12,
-                    color: Colors.red,                      
-                  ),
-                ),
-              ),
-            ),
-          ]
-        ),
-      ),
-    );    
-  }
-}
-
-//selecao de roteiros ---------------------------------------------------
 
 class CapaLivro extends StatelessWidget {
   final String imageUrl;
@@ -172,9 +47,7 @@ class CapaLivro extends StatelessWidget {
 List<String> generosUsuario = ['Horror','Romance','Adventure'];
 
 class SelecaoRoteiroRandom extends StatefulWidget {
-  const SelecaoRoteiroRandom({super.key});
-
-  @override  
+  @override
   _SelecaoRoteiroRandomState createState() => _SelecaoRoteiroRandomState();
 }
 
@@ -248,13 +121,13 @@ class ExibeLivro extends StatefulWidget {
   final VoidCallback onLivroEscolhido;
   final List<String> livrosEscolhidos;
 
-  const ExibeLivro({super.key, 
+  const ExibeLivro({
     required this.genero,
     required this.onLivroEscolhido,
     required this.livrosEscolhidos,
   });
 
-  @override  
+  @override
   _ExibeLivroState createState() => _ExibeLivroState();
 }
 
@@ -271,11 +144,12 @@ class _ExibeLivroState extends State<ExibeLivro> {
     carregandoLivro();
   }
 
-   void finalizaRoteiro() {    
+   void finalizaRoteiro() {
+    print('finalizando');
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const AbaFinalizacaoRoteiro(),      
+      builder: (context) => AbaFinalizacaoRoteiro(),      
     );
   }
 
@@ -340,7 +214,7 @@ class _ExibeLivroState extends State<ExibeLivro> {
                 TextSpan(
                   text: widget.genero,       
                   style: TextStyle(
-                    color: const Color(0xFF48a0d4),
+                    color: Color(0xFF48a0d4),
                     fontSize: MediaQuery.of(context).size.width * 0.045,
                     fontWeight: FontWeight.bold,
                   ),
@@ -403,7 +277,7 @@ class _ExibeLivroState extends State<ExibeLivro> {
                           color: Colors.white.withOpacity(0.5),
                           dismissible: false,
                         ),
-                        const Center (
+                        Center (
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF48a0d4)),
                         ),
@@ -520,7 +394,7 @@ class _AbaDadosLivroState extends State<AbaDadosLivro> {
                           text: widget.livro.nome,
                           style: TextStyle(                          
                             fontSize: MediaQuery.of(context).size.width * 0.06,
-                            color: const Color(0xFF48a0d4),
+                            color: Color(0xFF48a0d4),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -560,8 +434,6 @@ class _AbaDadosLivroState extends State<AbaDadosLivro> {
 }
 
 class AbaFinalizacaoRoteiro extends StatelessWidget {
-  const AbaFinalizacaoRoteiro({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -576,7 +448,7 @@ class AbaFinalizacaoRoteiro extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
+            Text(
               'Seu roteiro está pronto!',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -584,13 +456,13 @@ class AbaFinalizacaoRoteiro extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             Icon(
               Ionicons.checkmark_circle_outline,
               size: MediaQuery.of(context).size.width * 0.15,
               color: const Color(0xFF48a0d4),
             ), 
-            const SizedBox(height: 20),           
+            SizedBox(height: 20),           
             BotaoGradiente(
               onPressed: () {
                 Navigator.pushReplacement( // Substitui a página atual pela página principal

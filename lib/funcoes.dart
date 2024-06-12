@@ -1,5 +1,4 @@
 // ignore_for_file: avoid_print
-
 import 'package:flutter/material.dart';
 import 'componentes.dart';
 import 'package:http/http.dart' as http;
@@ -317,8 +316,7 @@ Future<bool> loginUsuario(
   PopAviso aviso = PopAviso();
 
   if (response.statusCode == 200) {
-    //salva os dados do usuario logado em dadosUser
-    carregamento.hide();
+    //salva os dados do usuario logado em dadosUser    
     final responseData = jsonDecode(response.body);
     final usuario = responseData['usuario'];
     usuario.forEach((key, value) {
@@ -360,17 +358,17 @@ Future<void> buscarDadosLivro(BuildContext context, String isbn, Map<String, dyn
     if (bookData != null) {
       destino['isbn'] = isbn;
       destino['titulo'] = bookData['title'];
-      destino['autor'] =
-          (bookData['authors'] != null && bookData['authors'].isNotEmpty)
-              ? bookData['authors'][0]['name']
-              : 'Desconhecido';
+      destino['autor'] = (bookData['authors'] != null
+        && bookData['authors'].isNotEmpty)
+        ? bookData['authors'][0]['name']
+        : 'Desconhecido';
       destino['paginas'] = bookData['number_of_pages'] ?? 0;
       destino['ano'] = bookData['publish_date'] ?? 'Desconhecido';
       destino['sinopse'] = bookData['description'] ?? 'Sinopse não disponível';
-      destino['genero'] =
-          (bookData['subjects'] != null && bookData['subjects'].isNotEmpty)
-              ? bookData['subjects'][0]['name']
-              : 'Gênero não disponível';
+      destino['genero'] = (bookData['subjects'] != null &&
+        bookData['subjects'].isNotEmpty)
+        ? bookData['subjects'][0]['name']
+        : 'Gênero não disponível';
     } else {
       throw Exception('Livro não encontrado');
     }
@@ -639,4 +637,8 @@ Future<void> atualizarProgresso(DateTime? dataPrazo, DateTime? dataInicio, DateT
     // Erro
     print('Erro ao atualizar entrada de progresso: $error');
   }
+}
+
+Future<void> confirmaSair()async {  
+  
 }

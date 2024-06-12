@@ -45,10 +45,11 @@ class CustomAppBar {
 
 //construcao das rotas para os itens do menu suspenso
 class ItemMenu {
+  final IconData icone;
   final String titulo;
   final String rotaItem;
 
-  ItemMenu(this.titulo, this.rotaItem);
+  ItemMenu(this.icone, this.titulo, this.rotaItem);
 }
 
 //menu suspenso ------------------------------------------
@@ -58,22 +59,19 @@ class MenuLateral extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+      backgroundColor: const Color(0XFF2D2C2C),
+      child: Column(
         children: <Widget>[
-           DrawerHeader(
+          DrawerHeader(
             // ignore: prefer_const_constructors
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 2, 43, 77),
-            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const CircleAvatar(
-                  radius: 40,  // Tamanho do círculo
-                  backgroundImage: AssetImage('assets/imagens/user.png'),                 
+                  radius: 40, // Tamanho do círculo
+                  backgroundImage: AssetImage('assets/imagens/user.png'),
                 ),
-                const SizedBox(height: 10),  // Espaçamento entre a imagem e o texto
+                SizedBox(height: MediaQuery.of(context).size.width * 0.03),
                 Text(
                   dadosUser['nome'] ?? 'Nome do Usuário',
                   style: const TextStyle(
@@ -84,7 +82,25 @@ class MenuLateral extends StatelessWidget {
               ],
             ),
           ),
-          ...buildMenuItems(context),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: buildMenuItems(context),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.exit_to_app, color: Color(0xFF48a0d4)),
+            title: const Text(
+              'Sair',
+              style: TextStyle(
+              color: Colors.white,
+              ),
+            ),
+            onTap: () {              
+              Navigator.of(context).pop();
+              confirmaSair();
+            },
+          ),
         ],
       ),
     );
@@ -93,13 +109,22 @@ class MenuLateral extends StatelessWidget {
   // Método para construir as opções do menu
   List<Widget> buildMenuItems(BuildContext context) {
     List<ItemMenu> menuItems = [
-      ItemMenu('Home', '/'),
+      ItemMenu(Icons.home,'Home', '/'),
+      ItemMenu(Icons.book, 'Roteiro de Leitura', '/'),
+      ItemMenu(Icons.settings, 'Preferências', '/'),
+      ItemMenu(Icons.history, 'Histórico de Leitura', '/'),
       //adicionar outras rotas
     ];
 
     return menuItems.map((item) {
       return ListTile(
-        title: Text(item.titulo),
+        leading: Icon(item.icone, color: const Color(0xFF48a0d4)),
+        title: Text(
+          item.titulo,
+          style: const TextStyle(
+          color: Colors.white,
+          ),
+        ),
         onTap: () {
           Navigator.of(context).pushReplacementNamed(item.rotaItem);
         },
@@ -190,34 +215,57 @@ Future<void> mostrarConfirmacao(BuildContext context, String titulo, String mens
 
 // tela de carregamento simples ------------------------------------------
 class LoadingOverlay {
-  // ignore: unused_field 
   late OverlayEntry? _overlayEntry;
+  String? _loadingText; //texto opcional
 
-  //mostrar carregamento
-  void show(BuildContext context) {
-    context = getAppContext()!;
-    _overlayEntry = OverlayEntry(
-      builder: (BuildContext context) => Stack(
-        children: <Widget>[
-          ModalBarrier(
-            color: Colors.white.withOpacity(0.5),
-            dismissible: false,
-          ),
-          const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF48a0d4)),
+  // Mostrar carregamento
+  void show(BuildContext context, {String? loadingText}) {
+    _loadingText = loadingText;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context = getAppContext()!;
+      _overlayEntry = OverlayEntry(
+        builder: (BuildContext context) => Stack(
+          children: <Widget>[
+            ModalBarrier(
+              color: Colors.white.withOpacity(0.5),
+              dismissible: false,
             ),
-          ),
-        ],
-      ),
-    );
-    Overlay.of(context).insert(_overlayEntry!);
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF48a0d4)),
+                  ),
+                  if (_loadingText != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 20.0),
+                      child: Text(
+                        _loadingText!,
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: MediaQuery.of(context).size.width * 0.05,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+      Overlay.of(context).insert(_overlayEntry!);
+    });
   }
-  //esconder carregamento
+
+  // Esconder carregamento
   void hide() {
     if (_overlayEntry != null) {
       _overlayEntry?.remove();
       _overlayEntry = null;
+      _loadingText = null;
     }
   }
 }
@@ -577,14 +625,12 @@ class CaixaProgresso extends StatelessWidget {
                           bool possuiGenero = dadosBasicosUser('generos').isNotEmpty;
                           if (possuiGenero) {
                             // ignore: avoid_print
-                            print('usuario tem generos');
-                            /*
+                            print('usuario tem generos');                            
                             Navigator.pushReplacement(
                               // ignore: use_build_context_synchronously
                               context,
-                              MaterialPageRoute(builder: (context) => Roteiros()),  
-                            );
-                            */
+                              MaterialPageRoute(builder: (context) => const SelecaoRoteiroRandom()),  
+                            );                            
                           } else {
                             Navigator.push(
                             // ignore: use_build_context_synchronously
