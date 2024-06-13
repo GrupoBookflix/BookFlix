@@ -1,3 +1,4 @@
+/*
 import 'dart:async';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
@@ -18,3 +19,4 @@ Future<File?> selecionarImagem(ImageSource imagem) async {
     return null;
   }
 }
+*/
