@@ -2,8 +2,10 @@
 //import 'package:image_picker/image_picker.dart';
 //import 'Funcoes/selecionar_imagem.dart' as Funcoes;
 // ignore_for_file: library_private_types_in_public_api
+import 'dart:io';
 import 'package:bookflix/componentes.dart';
 import 'package:bookflix/funcoes.dart';
+import 'alterar_senha.dart';
 import 'package:flutter/material.dart';
 
 class Conta extends StatefulWidget {
@@ -28,12 +30,12 @@ class _ContaState extends State<Conta> {
               Stack(
                 children: [
                   InkWell(
-                      onTap: () async {
+                      onTap: () async {                        
                         /*
                         imagemSelecionada =
                             await Funcoes.selecionarImagem(ImageSource.gallery);
                         // Faça algo com a imagemSelecionada, como exibir ou processar
-                        // */
+                        // */                      
                       },
                       child:const CircleAvatar(
                         radius: 50, // Defina o tamanho desejado aqui
@@ -147,8 +149,11 @@ class _ContaState extends State<Conta> {
                   ],
                 ),
                 child: TextButton(
-                  onPressed: () {                
-                    Navigator.pushNamed(context, '/alterarsenha');
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AlterarSenha()),
+                    );
                   },
                   style: TextButton.styleFrom(
                     shape: RoundedRectangleBorder(
