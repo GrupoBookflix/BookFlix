@@ -226,6 +226,7 @@ class MenuLateral extends StatelessWidget {
       ),
       onTap: () {        
         Navigator.of(context).pop();
+        setAppContext(context);
         PopAviso aviso = PopAviso();
         aviso.aviso('Atenção','Deseja realmente sair?', cancelar: true, okPressed: () {
           SystemChannels.platform.invokeMethod('SystemNavigator.pop');
@@ -243,7 +244,7 @@ class PopAviso  {
     String mensagem,
     {bool? cancelar = false,
     String textoBotao = 'OK',
-    VoidCallback? okPressed
+    VoidCallback? okPressed,
     }) {   
     showDialog<void>(
       context: getAppContext()!,
@@ -255,10 +256,10 @@ class PopAviso  {
             TextButton(
               child: Text(textoBotao),
               onPressed: () {
-                if (okPressed != null) {
-                  okPressed();                  
+                if (okPressed != null) {                  
+                  okPressed;                      
                 } else {
-                  Navigator.of(context).pop();
+                  Navigator.pop(context);
                 }
               },
             ),
@@ -701,7 +702,7 @@ class CaixaProgressoState extends State<CaixaProgresso> {
                           BotaoGradiente(
                             texto: "Novo Roteiro",
                             onPressed: () {
-                              bool possuiGenero = (dadosUser['generos'].isNotEmpty && dadosUser['generos'].length >= 3);                          
+                              bool possuiGenero = (dadosUser['generos'] != null && dadosUser['generos'].length >= 3);                          
                               if (possuiGenero) {                           
                                 Navigator.pushNamed(context, Rotas.roteiros);                                
                               } else {

@@ -181,18 +181,15 @@ Future<bool> registraUsuario(
   if (response.statusCode == 200 || response.statusCode == 201) {
     // sucesso
     carregamento.hide();    
-    aviso.aviso('Sucesso', 'Usuário cadastrado com sucesso!');
     return true;
   } else if (response.statusCode == 400) {
     // falha
-    carregamento.hide();
-    //chamar a funcao de mostrar dialogo
+    carregamento.hide();    
     aviso.aviso('Erro', 'Já existe usuário com este email!');
     return false;
   } else {
     // falha servidor
-    carregamento.hide();
-    //chamar a funcao de mostrar dialogo
+    carregamento.hide();    
     aviso.aviso('Erro', 'Ocorreu um erro. Por favor tente novamente');
     return false;
   }
@@ -402,7 +399,7 @@ Future<bool> loginUsuario(BuildContext context, String email, String senha) asyn
 
 //recolher dados API ----------------------------------------
 
-Future<Livro> buscarPorGenero(String genero, List<String> livrosJaExibidos) async { 
+Future<Livro> buscarPorGenero(String genero, List<String> livrosJaExibidos) async {   
   int limiteInicial = 10; //limite de resultados na busca da api
   int chamadas = 0; // quantidade de chamadas feitas na api
   bool pesquisa = false; //enquanto o livro não ter os dados essenciais, busque o próximo
@@ -440,6 +437,7 @@ Future<Livro> buscarPorGenero(String genero, List<String> livrosJaExibidos) asyn
                 paginas: book['number_of_pages_median'],              
               );                        
               pesquisa = true;
+              print('LIVRO ENCONTRADO: ${livro.nome}');
               return livro;
             }
           } 

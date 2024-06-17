@@ -45,7 +45,7 @@ class _PrincipalState extends State<Principal> {
                 SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                 ResumoUser(),                            
                 SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-                Medidor(totalPaginasLidas: livroAtual['total_paginas_lidas']), //implementar a logica das paginas               
+                Medidor(totalPaginasLidas: livroAtual['total_paginas_lidas'] ?? 0), //implementar a logica das paginas               
               ],
             ),
           ),
@@ -154,6 +154,15 @@ class _HistoricoLeituraState extends State<HistoricoLeitura> {
                   ],
                 ),                
                 ] else ...[
+                  if(dadosLivrosLidos.isEmpty ) ...[
+                  const Text(
+                    'Você ainda não concluiu nenhum livro',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  ),
+                  ] else ...[
                   GridView.builder(
                     padding: EdgeInsetsDirectional.all(MediaQuery.of(context).size.width * 0.05),
                     shrinkWrap: true,
@@ -209,7 +218,9 @@ class _HistoricoLeituraState extends State<HistoricoLeitura> {
                         },
                       );
                     },
-                  ), 
+                   ),
+                   SizedBox(height: MediaQuery.of(context).size.height * 0.05), 
+                 ],
                ],
               ],
             ),

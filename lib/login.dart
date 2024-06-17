@@ -494,9 +494,10 @@ class _CadastroState extends State<Cadastro> {
                 if (nomeValido && emailValido && senhaValida && repeteSenhaValida) {
                   bool sucesso = await registraUsuario(context, _nomeController.text, _emailController.text, _senhaController.text);
                   if (sucesso) {
-                  aviso.aviso('Cadastro','Usuário cadastrado com sucesso!');
-                   // ignore: use_build_context_synchronously
-                   Navigator.pop(context);
+                   aviso.aviso('Cadastro','Usuário cadastrado com sucesso!', okPressed: () {                      
+                      Navigator.pop(context);                      
+                      Navigator.pop(context); 
+                   });                                  
                   }                   
                 }
               },

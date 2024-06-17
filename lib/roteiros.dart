@@ -95,11 +95,11 @@ class _SelecaoGenero extends State<SelecaoGenero> {
               padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.height * 0.03),
               child: Wrap(
                 alignment: WrapAlignment.center,
-                spacing: MediaQuery.of(context).size.height * 0.01,
+                spacing: MediaQuery.of(context).size.height * 0.005,
                 children: generoTermos.entries.map((entry) {
                   return TextoSelectBox(
-                    texto: entry.key,
-                    termo: entry.value,
+                    texto: entry.value,
+                    termo: entry.key,
                     onSelected: generosSelect,
                   );
                 }).toList(),
@@ -184,16 +184,28 @@ class SelecaoRoteiroRandom extends StatefulWidget {
   const SelecaoRoteiroRandom({
     required this.generosUsuario,
     super.key
-  });
+  });  
 
   @override  
   _SelecaoRoteiroRandomState createState() => _SelecaoRoteiroRandomState();
 }
 
-class _SelecaoRoteiroRandomState extends State<SelecaoRoteiroRandom> {
-    
+List<Map<String, dynamic>> livrosLidos = dadosLivrosLidos['livros_lidos'] as List<Map<String, dynamic>>;
+List<String> isbns = livrosLidos.map((livro) => livro['isbn'] as String).toList();
+
+class _SelecaoRoteiroRandomState extends State<SelecaoRoteiroRandom> {  
+  
   @override
-  Widget build(BuildContext context) {     
+  void initState() {
+    livrosEscolhidos.clear();
+    livrosJaExibidos.clear();
+    livrosJaExibidos = livrosLidos.map((livro) => livro['isbn'] as String).toList();
+    print('LIVROS RECUPERADOS DOS JA LIDOS:$livrosJaExibidos');
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {    
     setAppContext(context);  
     double margem = MediaQuery.of(context).size.width * 0.02;
     return Scaffold(
@@ -292,15 +304,17 @@ class _ExibeLivroState extends State<ExibeLivro> {
     setState(() {
       carregando = true; 
     });
-
+    print('ATUALIZANDO O LIVRO');
     try {
-      livro = await buscarPorGenero(widget.genero, livrosJaExibidos);
-      setState(() {
+      livro = await buscarPorGenero(widget.genero, livrosJaExibidos);      
         idImagem = livro.imageId;
         isbnAtual = livro.isbn;
         livro = livro;        
         livrosJaExibidos.add(livro.isbn);
         carregando = false; 
+        print('isbnAtual: $isbnAtual');
+      setState(() {
+        
       });
     } catch (e) {
       print('Erro ao buscar livro: $e');      
@@ -340,7 +354,7 @@ class _ExibeLivroState extends State<ExibeLivro> {
                   ),
                 ),
                 TextSpan(
-                  text: widget.genero,       
+                  text: dicionarioGenero(widget.genero),       
                   style: TextStyle(
                     color: const Color(0xFF48a0d4),
                     fontSize: MediaQuery.of(context).size.width * 0.045,

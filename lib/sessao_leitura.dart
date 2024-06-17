@@ -130,7 +130,7 @@ class _SessaoLeituraState extends State<SessaoLeitura> {
                         Navigator.pushReplacement(
                           // ignore: use_build_context_synchronously
                           context,
-                          MaterialPageRoute(builder: (context) => FimSessaoLeitura(paginas: paginasLidasSessao, tempo: tempoGasto, idImagemLivro: livroAtual['imagemId'])),
+                          MaterialPageRoute(builder: (context) => FimSessaoLeitura(paginas: paginasLidasSessao, tempo: tempoGasto, idImagemLivro: idImagemLivro)),
                         );
                       } else {
                         PopAviso aviso = PopAviso();
