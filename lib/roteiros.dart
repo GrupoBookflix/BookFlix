@@ -190,11 +190,8 @@ class SelecaoRoteiroRandom extends StatefulWidget {
   _SelecaoRoteiroRandomState createState() => _SelecaoRoteiroRandomState();
 }
 
-List<Map<String, dynamic>> livrosLidos = dadosLivrosLidos['livros_lidos'] as List<Map<String, dynamic>>;
-List<String> isbns = livrosLidos.map((livro) => livro['isbn'] as String).toList();
-
 class _SelecaoRoteiroRandomState extends State<SelecaoRoteiroRandom> {  
-  
+  List<Map<String, dynamic>> livrosLidos = dadosLivrosLidos['livros_lidos'] as List<Map<String, dynamic>>;
   @override
   void initState() {
     livrosEscolhidos.clear();
