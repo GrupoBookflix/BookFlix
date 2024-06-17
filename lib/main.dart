@@ -1,24 +1,22 @@
-import 'package:bookflix/funcoes.dart';
 import 'package:flutter/material.dart';
-import 'login.dart';
-import 'package:get/get.dart';
+import 'package:bookflix/widgets/funcoes.dart';
+import 'package:bookflix/rotas.dart'; // Importe o arquivo rotas.dart aqui
 
 void main() {
-  runApp(const MaterialApp (
-    home: MyApp(),
-  ));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   
   @override
-  Widget build(BuildContext context) {    
+  Widget build(BuildContext context) {
     setAppContext(context);
-    // ignore: prefer_const_constructors
-    return GetMaterialApp(      
-      title: 'Bookflix',      
-      home: const Login(),      
+    
+    return MaterialApp(      
+      title: 'Bookflix',
+      initialRoute: Rotas.login, // Use a constante definida em Rotas
+      routes: Rotas.getRoutes(), // Obtenha as rotas do arquivo rotas.dart
     );
   }
 }

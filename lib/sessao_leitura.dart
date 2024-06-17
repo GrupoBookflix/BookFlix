@@ -1,12 +1,10 @@
 // ignore_for_file: unused_import
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'funcoes.dart';
-import 'componentes.dart';
+import 'widgets/funcoes.dart';
+import 'widgets/componentes.dart';
 import 'package:ionicons/ionicons.dart';
-import 'principal.dart';
-
-PopAviso aviso = PopAviso();
+import 'rotas.dart';
 
 class SessaoLeitura extends StatefulWidget {
 
@@ -15,24 +13,148 @@ class SessaoLeitura extends StatefulWidget {
   @override
   // ignore: library_private_types_in_public_api
   _SessaoLeituraState createState() => _SessaoLeituraState();
+}
 
+void atualizaSessaoAnterior(int pagina) {
+  livroAtual['ultima_pagina_sessao_anterior'] = pagina;  
 }
 
 class _SessaoLeituraState extends State<SessaoLeitura> {
-
-  int paginasLivro = 100;
-  int paginasLidas = 9;  
+  int paginasLivro = livroAtual['paginas'];
+  int paginasLidas = livroAtual['ultima_pagina_lida'];   
+  String idImagemLivro = livroAtual['imagemId'];  
   bool estadoBotao = false;
   final GlobalKey<FormState> _paginaFormKey = GlobalKey<FormState>();
   final TextEditingController _paginaController = TextEditingController();
   final GlobalKey<_CronometroState> _cronometroKey = GlobalKey<_CronometroState>();
 
+  void verificaPagina() {
+    showDialog(
+      context: getAppContext()!,
+      builder: (BuildContext context) {    
+        double margem = MediaQuery.of(context).size.width * 0.03;   
+        final double largura = MediaQuery.of(context).size.width * 0.8;                      
+        return AlertDialog(
+          contentPadding: EdgeInsets.all(margem),
+          content: Container(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height * 0.23,
+              maxHeight: MediaQuery.of(context).size.height * 0.23,
+              minWidth: MediaQuery.of(context).size.width - MediaQuery.of(context).size.width * 0.1,
+              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  'Em qual página você parou?'
+                ),
+                SizedBox(height: margem),
+                Form(
+                  key: _paginaFormKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: TextFormField(                                      
+                    controller: _paginaController,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(                                        
+                      contentPadding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
+                      border: OutlineInputBorder(),
+                      hintText: 'Página',
+                    ),                                          
+                    validator: (value) {                                                                                      
+                      int? numero = int.tryParse(value ?? '');
+                      if (numero == null) {
+                          estadoBotao = false;
+                          return 'Por favor, insira um número válido.';
+                      } else if (numero <= paginasLidas && paginasLidas == 0) {
+                          estadoBotao = false;
+                          return 'Encerre a sessão se não tiver lido.';
+                      } else if (numero <= paginasLidas) {
+                          estadoBotao = false;
+                          return 'Você leu até a página $paginasLidas antes.';
+                      } else if (numero > paginasLivro) {                                              
+                          estadoBotao = false;
+                          return 'Este livro só tem $paginasLivro páginas.';
+                      } else { 
+                          estadoBotao = true;
+                          return null;                                                                                                                            
+                      }
+                    },                                           
+                  ),
+                ),                                    
+                SizedBox(height: margem * 1),
+                BotaoGradiente(
+                  largura: MediaQuery.of(context).size.width * 0.4,
+                  altura: largura * 0.15,
+                  texto: 'Confirmar',                                                                             
+                  onPressed: () async {                                        
+                    bool botaoEstado = estadoBotao;
+                    if (botaoEstado) {
+                      int ultimaPaginaLida = int.parse(_paginaController.text);
+                      int paginasLidasSessao = (ultimaPaginaLida - paginasLidas);
+                      int tempoGasto = _cronometroKey.currentState!.tempoPassadoEmMinutos();
+                      int totalPaginasLidas;
+                      
+                      // atualizar o progresso
+                      livroAtual['ultima_pagina_lida'] = ultimaPaginaLida;
+                      livroAtual['data_da_ultima_leitura'] = DateTime.now();
+
+                      // Verifica se livroAtual['pagina_totais_lidas'] é null ou não existe
+                      if (livroAtual['pagina_totais_lidas'] == null) {
+                        livroAtual['pagina_totais_lidas'] = paginasLidasSessao.toString();
+                        totalPaginasLidas = ultimaPaginaLida;
+                      } else {
+                        // Converte para int antes de somar
+                        totalPaginasLidas = int.parse(livroAtual['pagina_totais_lidas']!) + paginasLidasSessao;
+                        livroAtual['pagina_totais_lidas'] = (totalPaginasLidas + paginasLidasSessao).toString();
+                      }                     
+                      // Verifica se livroAtual['tempo_gasto'] é null ou não existe
+                      if (livroAtual['tempo_gasto'] == null) {
+                        livroAtual['tempo_gasto'] = tempoGasto;
+                      } else {
+                        // Converte para int antes de somar
+                        int tempoGastoAtual = livroAtual['tempo_gasto'];
+                        livroAtual['tempo_gasto'] = tempoGastoAtual + tempoGasto;
+                      }       
+                      atualizaSessaoAnterior(ultimaPaginaLida);                                       
+                      bool resultado = await atualizarProgresso(
+                        concluindo: (ultimaPaginaLida == paginasLivro),
+                        dataUltimaLeitura: livroAtual['data_da_ultima_leitura'],
+                        ultimaPaginaLida: ultimaPaginaLida,
+                        tempoGasto: tempoGasto,
+                        totalPaginasLidas: totalPaginasLidas,
+                      );                                                                                               
+                      //ir para o resumo  
+                      if (resultado) {
+                        Navigator.pushReplacement(
+                          // ignore: use_build_context_synchronously
+                          context,
+                          MaterialPageRoute(builder: (context) => FimSessaoLeitura(paginas: paginasLidasSessao, tempo: tempoGasto, idImagemLivro: livroAtual['imagemId'])),
+                        );
+                      } else {
+                        PopAviso aviso = PopAviso();
+                        aviso.aviso('Erro', 'Não foi possível atualizar seu progresso. Tente novamente mais tarde');
+                      }                               
+  
+                    }
+                  }
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {    
+  Widget build(BuildContext context) {      
     final double largura = MediaQuery.of(context).size.width * 0.8; 
     final double altura = largura * 0.4;    
     double margem = MediaQuery.of(context).size.width * 0.03;
     int paginasRestantes = paginasLivro - paginasLidas;
+    setAppContext(context);
     return GestureDetector(
     onTap: () {
       FocusScope.of(context).unfocus(); // Desfoca os campos de texto
@@ -63,37 +185,69 @@ class _SessaoLeituraState extends State<SessaoLeitura> {
                   child: Row (
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // imagem da capa
+                      // imagem da capa                     
                       Container(
-                        margin: EdgeInsets.only(left: margem),
-                        color: Colors.green,
-                        width: altura / 1.8,
-                        height: altura * 0.8,
-                        /*
-                        decoration: const BoxDecoration(
-                          // detalhes da imagem da capa
+                        margin: EdgeInsets.symmetric(horizontal: margem),
+                        child: 
+                        GestureDetector(
+                          child: CapaLivro(
+                            imageId: idImagemLivro,                              
+                            tamanhoCapa: altura / 1.8,                       
+                          ),
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return Center(
+                                  child: Container(
+                                    margin: EdgeInsets.all(margem*5),
+                                    width: MediaQuery.of(context).size.width * 0.8,
+                                    height: MediaQuery.of(context).size.height * 0.6,
+                                    // aba de detalhes do livro
+                                    child: const AbaDadosLivro(),
+                                  ),
+                                );
+                              },
+                            );      
+                          },
                         ),
-                        */
                       ),
                       Expanded(
                         child: Column (                        
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
-                              'Você está lendo',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 16,                                
-                              ),
-                            ),
-                            Text(                              
-                              dadosLivroAtual['titulo'] ?? 'Título',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,                                
-                              ),
-                            ),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                return Column (
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Text(
+                                      'Você está lendo',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxHeight: MediaQuery.of(context).size.width * 0.25, // Define a largura máxima permitida
+                                      ),
+                                      child: Text(
+                                        livroAtual['titulo'] ?? 'Título',
+                                        textAlign: TextAlign.center,
+                                        maxLines: 3, // Defina o número máximo de linhas desejado
+                                        overflow: TextOverflow.ellipsis, // Adicione ellipsis se o texto for cortado
+                                        style: const TextStyle(
+                                          fontSize: 23,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF48a0d4),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            )
                           ],
                         ),
                       ),
@@ -133,7 +287,7 @@ class _SessaoLeituraState extends State<SessaoLeitura> {
                               SizedBox(height: margem),
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,                                
                                 children: [
                                   Expanded(
                                     child: Row(
@@ -156,15 +310,14 @@ class _SessaoLeituraState extends State<SessaoLeitura> {
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  SizedBox(width: margem * 2), // Espaço entre os textos
+                                  ),                                  
                                   Expanded(
                                     child: Row(
                                       children: [
                                         Expanded(
                                           child: Text(
                                             "Resta${paginasRestantes != 1 ? 'm' : ''}: $paginasRestantes página${paginasRestantes != 1 ? 's' : ''}",
-                                            softWrap: true,
+                                            softWrap: false,
                                             textAlign: TextAlign.end,
                                             style: TextStyle(
                                               fontSize: largura * 0.045,
@@ -172,7 +325,7 @@ class _SessaoLeituraState extends State<SessaoLeitura> {
                                           ),
                                         ),
                                         SizedBox(width: margem * 0.5),
-                                        Icon(
+                                        Icon(                                          
                                           Icons.circle,
                                           size: 8,
                                           color: Colors.grey[300],
@@ -195,90 +348,7 @@ class _SessaoLeituraState extends State<SessaoLeitura> {
                 BotaoGradiente(tamanhoFonte: 20, texto: 'Encerrar', largura: MediaQuery.of(context).size.height * 0.2,                  
                   onPressed: () {    
                     if (_cronometroKey.currentState!.tempoPassado()) {                
-                      aviso.aviso('Encerrar','Tem certeza que dejesa encerrar a sessão de leitura?', textoBotao: 'Encerrar', cancelar: true,
-                        okPressed: () {                      
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {                            
-                              return AlertDialog(
-                                contentPadding: EdgeInsets.all(margem),
-                                content: Container(
-                                  constraints: BoxConstraints(
-                                    minHeight: MediaQuery.of(context).size.height * 0.23,
-                                    maxHeight: MediaQuery.of(context).size.height * 0.23,
-                                    minWidth: MediaQuery.of(context).size.width - MediaQuery.of(context).size.width * 0.1,
-                                    ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      const Text(
-                                        'Em qual página você parou?'
-                                      ),
-                                      SizedBox(height: margem),
-                                      Form(
-                                        key: _paginaFormKey,
-                                        autovalidateMode: AutovalidateMode.onUserInteraction,
-                                        child: TextFormField(                                      
-                                          controller: _paginaController,
-                                          textAlign: TextAlign.center,
-                                          keyboardType: TextInputType.number,
-                                          decoration: const InputDecoration(                                        
-                                            contentPadding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 10.0),
-                                            border: OutlineInputBorder(),
-                                            hintText: 'Página',
-                                          ),                                          
-                                          validator: (value) {                                                                                      
-                                            int? numero = int.tryParse(value ?? '');
-                                            if (numero == null) {
-                                                estadoBotao = false;
-                                                return 'Por favor, insira um número válido.';
-                                            } else if (numero <= paginasLidas) {
-                                                estadoBotao = false;
-                                                return 'Você leu até a página $paginasLidas antes.';
-                                            } else if (numero > paginasLivro) {                                              
-                                                estadoBotao = false;
-                                                return 'Este livro só tem $paginasLivro páginas.';
-                                            } else { 
-                                                estadoBotao = true;
-                                                return null;                                                                                                                            
-                                            }
-                                          },                                           
-                                        ),
-                                      ),                                    
-                                      SizedBox(height: margem * 1),
-                                      BotaoGradiente(
-                                        largura: MediaQuery.of(context).size.width * 0.4,
-                                        altura: largura * 0.15,
-                                        texto: 'Confirmar',                                                                             
-                                        onPressed: () {                                        
-                                          bool botaoEstado = estadoBotao;
-                                          if (botaoEstado) {
-                                            int ultimaPaginaLida = int.parse(_paginaController.text);
-                                            int paginasLidasSessao = (ultimaPaginaLida - paginasLidas);
-                                            int tempoGasto = _cronometroKey.currentState!.tempoPassadoEmMinutos();
-                                            //atualizar o progresso
-                                            dadosLivroAtual['ultima_pagina_lida'] = ultimaPaginaLida;
-                                            dadosLivroAtual['data_da_ultima_leitura'] = DateTime.now().toIso8601String();
-                                            dadosLivroAtual['pagina_totais_lidas'] += paginasLidasSessao;
-                                            dadosLivroAtual['tempo_gasto'] += tempoGasto;                                            
-                                            //ir para o resumo                                           
-                                            Navigator.pushReplacement(
-                                              // ignore: use_build_context_synchronously
-                                              context,
-                                              MaterialPageRoute(builder: (context) => FimSessaoLeitura(paginas: paginasLidasSessao, tempo: tempoGasto)),
-                                            );
-                                          }
-                                        }
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }
-                          );
-                        }
-                      );
+                      verificaPagina();   
                     }
                   },
                 ),
@@ -315,10 +385,12 @@ class _SessaoLeituraState extends State<SessaoLeitura> {
 class FimSessaoLeitura extends StatefulWidget {
   final int tempo;
   final int paginas;
+  final String idImagemLivro;
 
   const FimSessaoLeitura({
     required this.tempo,
     required this.paginas,
+    required this.idImagemLivro,
     super.key    
   });
 
@@ -331,10 +403,11 @@ class FimSessaoLeitura extends StatefulWidget {
 class _FimSessaoLeituraState extends State<FimSessaoLeitura> { 
 
   @override
-  Widget build(BuildContext context) {    
+  Widget build(BuildContext context) {   
+    setAppContext(context); 
     final double largura = MediaQuery.of(context).size.width * 0.9; 
     final double altura = MediaQuery.of(context).size.height * 0.75;    
-    double margem = MediaQuery.of(context).size.width * 0.05;
+    double margem = MediaQuery.of(context).size.width * 0.05;    
     final int tempo = widget.tempo;
     final int paginas = widget.paginas;
     return Scaffold(
@@ -362,7 +435,7 @@ class _FimSessaoLeituraState extends State<FimSessaoLeitura> {
                 ),
                 child: Column(
                   children: [
-                    SizedBox(height: margem * 2),
+                    SizedBox(height: margem * 1.5),
                     const Text.rich(
                       TextSpan(
                         text: 'Sessão de Leitura\n',
@@ -383,12 +456,8 @@ class _FimSessaoLeituraState extends State<FimSessaoLeitura> {
                       textAlign: TextAlign.center,
                     ),
                     Container(
-                      margin: EdgeInsets.all(margem),
-                      color: Colors.green,
-                      width: largura * 0.35,
-                      height: altura * 0.3,
-                      /*
-                      decoration: const BoxDecoration(
+                      margin: EdgeInsets.all(margem),                                          
+                      decoration: BoxDecoration(
                         // detalhes da imagem da capa
                         boxShadow: [
                           BoxShadow(
@@ -397,9 +466,12 @@ class _FimSessaoLeituraState extends State<FimSessaoLeitura> {
                             blurRadius: 10,
                             offset: const Offset(-2, 5),
                           ),
-                        ],
-                      ),
-                      */
+                        ],                        
+                      ), 
+                      child: CapaLivro(
+                        imageId: widget.idImagemLivro,                              
+                        tamanhoCapa: altura * 0.25,                       
+                      ),                      
                     ),
                     Row (
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -452,18 +524,15 @@ class _FimSessaoLeituraState extends State<FimSessaoLeitura> {
                         ),
                       ],
                     ),  
-                    SizedBox(height: margem * 2),
+                    SizedBox(height: margem),
                     BotaoGradiente(
                       largura: largura * 0.3,
                       altura: altura * 0.08,
                       tamanhoFonte: altura * 0.035,
                       texto: 'Ok',
-                      onPressed: () {
-                        Navigator.pushReplacement( // Substitui a página atual pela página principal
-                          // ignore: use_build_context_synchronously
-                          context,
-                          MaterialPageRoute(builder: (context) => const Principal()),
-                        );
+                      onPressed: () async {
+                        await recolherDados(dadosUser['id']);
+                        Navigator.of(getAppContext()!).pushReplacementNamed(Rotas.principal);
                       },                      
                     ),                     
                   ],
@@ -567,4 +636,67 @@ class _CronometroState extends State<Cronometro> {
     temporizador.cancel();
     super.dispose();
   }
+}
+
+class AbaDadosLivro extends StatefulWidget {
+
+  const AbaDadosLivro({
+    super.key,
+  });
+
+  @override  
+  // ignore: library_private_types_in_public_api
+  _AbaDadosLivroState createState() => _AbaDadosLivroState();
+}
+
+class _AbaDadosLivroState extends State<AbaDadosLivro> {   
+
+  @override
+  Widget build(BuildContext context) {        
+    return Scaffold(            
+      body:  Stack(
+        children: [          
+          SingleChildScrollView(             
+            child: Center(
+              child: Container (
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.06),
+                alignment: Alignment.center,
+                child: Column (
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text.rich(
+                        TextSpan(
+                          text: livroAtual['titulo'],
+                          style: TextStyle(                          
+                            fontSize: MediaQuery.of(context).size.width * 0.06,
+                            color: const Color(0xFF48a0d4),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(                      
+                      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04),
+                      child: CapaLivro(
+                      imageId: livroAtual['imagemId'],
+                      tamanhoCapa: MediaQuery.of(context).size.width * 0.5
+                    ),
+                    ),
+                    Text(
+                      livroAtual['autor'].toString(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width * 0.055,
+                      ),
+                    ),                                         
+                  ],
+                ),                             
+              ),
+            ),
+          ), 
+        ],         
+      ),
+    );
+  }   
 }

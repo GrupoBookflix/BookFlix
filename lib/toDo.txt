@@ -1,7 +1,3 @@
-. Fazer a logica de enviar os dados do prazo escolhido para o roteiro e verificacao do prazo restante
-na CaixaProgresso
+. Conduzir alterações para seguir princípios de UX e cumprir heristicas
 
-. Fazer a lógica de conceder pontos após o termino da leitura.
-
-
-
+. Resolver problema na troca de senha

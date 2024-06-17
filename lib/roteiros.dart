@@ -1,15 +1,38 @@
-// ignore_for_file: avoid_print, library_private_types_in_public_api
-
-import 'package:bookflix/componentes.dart';
+// ignore_for_file: avoid_print, library_private_types_in_public_api, prefer_is_empty
 import 'package:flutter/material.dart';
 import 'package:bookflix/models/livro.dart';
-import 'package:http/http.dart' as http;
 import 'package:ionicons/ionicons.dart';
-import 'dart:convert';
-import 'principal.dart';
-import 'funcoes.dart';
+import 'widgets/funcoes.dart';
+import 'widgets/componentes.dart';
+import 'rotas.dart';
 
-LoadingOverlay carregamento = LoadingOverlay();
+final Map<String, String> generoTermos = {      
+  'fiction': 'FICÇÃO',
+  'fantasy': 'FANTASIA',
+  'mystery': 'MISTÉRIO',
+  'romance': 'ROMANCE',
+  'terror': 'TERROR',
+  'adventure': 'AVENTURA',
+  'drama': 'DRAMA',
+  'science fiction': 'FICÇÃO CIENTÍFICA',
+  'comedy': 'COMÉDIA',
+  'poetry': 'POESIA',
+  'classical': 'CLÁSSICO',
+  'police': 'POLICIAL',
+  'historic': 'HISTÓRICO',
+  'biography': 'BIOGRAFIA',
+  'religion': 'RELIGIÃO',
+  'juvenile': 'INFANTO-JUVENIL',
+  // adicionar mais se necessário
+};
+
+String dicionarioGenero(String chave) {
+  if (generoTermos.containsKey(chave)) {
+    return generoTermos[chave]!;
+  } else {    
+    return "Gênero desconhecido!";
+  }  
+}
 
 //selecao de generos ---------------------------------------------------
 
@@ -37,26 +60,7 @@ class _SelecaoGenero extends State<SelecaoGenero> {
 
   @override
   Widget build(BuildContext context) {
-    //lista de generos    
-    final Map<String, String> generoTermos = {      
-      'Ficção': 'fiction',
-      'Fantasia': 'fantasy',
-      'Mistério': 'mystery',
-      'Romance': 'romance',
-      'Terror': 'terror',
-      'Aventura': 'adventure',
-      'Drama': 'drama',
-      'Ficção Científica': 'science fiction',
-      'Comédia': 'comedy',
-      'Poesia': 'poetry',
-      'Clássico': 'classical',
-      'Policial': 'police',
-      'Histórico': 'historic',
-      'Biografia': 'biography',
-      'Religião': 'religion',
-      'Infanto-Juvenil': 'juvenile',
-      // adicionar mais se necessario
-    };
+    setAppContext(context);   
     return Scaffold(  
       appBar: CustomAppBar.build(context),
       drawer: const MenuLateral(),  
@@ -68,7 +72,7 @@ class _SelecaoGenero extends State<SelecaoGenero> {
             Container(
               alignment: Alignment.center,
               child: Text(
-                'Do que você gosta, ${dadosBasicosUser('nome').isNotEmpty == true ? dadosBasicosUser('nome') : 'leitor(a)'}?',
+                'Do que você gosta, ${dadosUser['nome'].isNotEmpty == true ? dadosUser['nome'] : 'leitor(a)'}?',
                 style: const TextStyle(
                   color: Color(0xFF48a0d4),
                   fontSize: 20,
@@ -104,10 +108,9 @@ class _SelecaoGenero extends State<SelecaoGenero> {
             SizedBox(height: MediaQuery.of(context).size.height * 0.05),
             BotaoGradiente(texto: 'Confirmar',
             onPressed: () async {              
-              bool sucesso = await adicionarGenero(context, dadosBasicosUser('id'),'genero');
-              if (sucesso) {                
-                // ignore: use_build_context_synchronously
-                Navigator.pop(context);              
+              bool sucesso = await adicionarGenero(context, dadosUser['id'],generosSelecionados);
+              if (sucesso) {                                
+                Navigator.of(getAppContext()!).pushReplacementNamed(Rotas.principal);          
               }                            
             },
             largura: MediaQuery.of(context).size.width * 0.35,
@@ -135,54 +138,63 @@ class _SelecaoGenero extends State<SelecaoGenero> {
 
 //selecao de roteiros ---------------------------------------------------
 
-class CapaLivro extends StatelessWidget {
-  final String imageUrl;
-  final double tamanhoCapa;
+List<Livro> livrosEscolhidos = [];
+List<String> livrosJaExibidos = []; 
+int prazoEscolhido = 0;
 
-  const CapaLivro({super.key, 
-    required this.imageUrl,
-    required this.tamanhoCapa,
-  });
+void terminaRoteiro(BuildContext context){  
+  showDialog(
+    context: context, 
+    builder: (context) => const AbaFinalizacaoRoteiro()
+  ); 
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.none,
-      width: tamanhoCapa,
-      height: tamanhoCapa * (23 / 15), // proporcao padrao livro
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            spreadRadius: 0,
-            blurRadius: 10,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Image(
-        image: NetworkImage(imageUrl),
-        fit: BoxFit.cover,
-      ),
+void setPrazoEscolhido(int prazo) {
+  prazoEscolhido = prazo;
+}
+
+void salvarRoteiro(BuildContext context) async {    
+
+  livrosRoteiro = livrosEscolhidos.map((livro) => livro.isbn).toList();
+  bool resultado = await criarRoteiroDeLeitura(context, 'roteiro_de_${dadosUser['nome']}', livrosRoteiro, prazoEscolhido);
+
+  if (resultado) {
+    await recolherDados(dadosUser['id']); //apos as atualizacoes, carregue novamente os dados
+    terminaRoteiro(getAppContext()!);
+  } else {
+    PopAviso aviso = PopAviso();
+    aviso.aviso('Erro','Não foi possível criar seu roteiro. Tente novamente mais tarde.',
+      okPressed: () {       
+        voltar(context);       
+      }
     );
   }
 }
 
-List<String> generosUsuario = ['Horror','Romance','Adventure'];
+void voltar(BuildContext context) {
+  livrosEscolhidos.clear();
+  livrosJaExibidos.clear();
+  Navigator.of(context).pushReplacementNamed(Rotas.principal);
+}
 
 class SelecaoRoteiroRandom extends StatefulWidget {
-  const SelecaoRoteiroRandom({super.key});
+  
+  final List<String> generosUsuario;
+  
+  const SelecaoRoteiroRandom({
+    required this.generosUsuario,
+    super.key
+  });
 
   @override  
   _SelecaoRoteiroRandomState createState() => _SelecaoRoteiroRandomState();
 }
 
 class _SelecaoRoteiroRandomState extends State<SelecaoRoteiroRandom> {
-  List<String> livrosEscolhidos = []; 
-
+    
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) {     
+    setAppContext(context);  
     double margem = MediaQuery.of(context).size.width * 0.02;
     return Scaffold(
       backgroundColor: Colors.white,
@@ -193,7 +205,7 @@ class _SelecaoRoteiroRandomState extends State<SelecaoRoteiroRandom> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(height: margem),
-            if(livrosEscolhidos.isEmpty)
+            if(livrosEscolhidos.length == 0)
             Text(
               'Escolha 9 livros para seu roteiro!',
               textAlign: TextAlign.center,
@@ -201,7 +213,7 @@ class _SelecaoRoteiroRandomState extends State<SelecaoRoteiroRandom> {
                 fontSize: MediaQuery.of(context).size.width * 0.045,
               ),
             ),
-            if(livrosEscolhidos.length < 9)
+            if(livrosEscolhidos.length < 9 && livrosEscolhidos.length >= 1)
             Text(
               'Faltam ${9-livrosEscolhidos.length} livros para montar seu roteiro!',
               textAlign: TextAlign.center,
@@ -228,14 +240,14 @@ class _SelecaoRoteiroRandomState extends State<SelecaoRoteiroRandom> {
                   valueColor: const AlwaysStoppedAnimation<Color>(
                     Color(0xFF48a0d4), //cor barra cheia
                   ),
-                  value: livrosEscolhidos.length / 9,   //porcentagem da barra
+                  value: livrosEscolhidos.length / 9, //porcentagem da barra
                 ),
               ),
             ),
-            SizedBox(height: margem*4),
-            ExibeLivro(genero: generosUsuario[0], livrosEscolhidos: livrosEscolhidos, onLivroEscolhido: () => setState(() {})),
-            ExibeLivro(genero: generosUsuario[1], livrosEscolhidos: livrosEscolhidos, onLivroEscolhido: () => setState(() {})),          
-            ExibeLivro(genero: generosUsuario[2], livrosEscolhidos: livrosEscolhidos, onLivroEscolhido: () => setState(() {})),            
+            SizedBox(height: margem*4),                    
+            ExibeLivro(genero: widget.generosUsuario[0], onLivroEscolhido: () => setState(() {})),
+            ExibeLivro(genero: widget.generosUsuario[1], onLivroEscolhido: () => setState(() {})),          
+            ExibeLivro(genero: widget.generosUsuario[2], onLivroEscolhido: () => setState(() {})),            
           ],
         ),
       ),
@@ -245,78 +257,68 @@ class _SelecaoRoteiroRandomState extends State<SelecaoRoteiroRandom> {
 
 class ExibeLivro extends StatefulWidget {
   final String genero;
-  final VoidCallback onLivroEscolhido;
-  final List<String> livrosEscolhidos;
+  final VoidCallback onLivroEscolhido;  
 
   const ExibeLivro({super.key, 
     required this.genero,
-    required this.onLivroEscolhido,
-    required this.livrosEscolhidos,
+    required this.onLivroEscolhido,    
   });
 
   @override  
   _ExibeLivroState createState() => _ExibeLivroState();
 }
 
-class _ExibeLivroState extends State<ExibeLivro> {
-  List<String> livrosJaExibidos = [];  
+class _ExibeLivroState extends State<ExibeLivro> {  
   late String idImagem = '';
-  late Livro dadosLivro;
+  late Livro livro;
   late String isbnAtual = '';
   bool carregando = false;  
 
   @override
   void initState() {
     super.initState();
-    carregandoLivro();
+    atualizarLivro();
   }
 
    void finalizaRoteiro() {    
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const AbaFinalizacaoRoteiro(),      
+      builder: (context) => const AbaPrazosRoteiro(),      
     );
   }
 
-  void carregandoLivro() async {
+  void atualizarLivro() async {
     setState(() {
       carregando = true; 
     });
 
     try {
-      Livro livro = await buscarPorGenero(widget.genero, livrosJaExibidos);
+      livro = await buscarPorGenero(widget.genero, livrosJaExibidos);
       setState(() {
         idImagem = livro.imageId;
         isbnAtual = livro.isbn;
-        dadosLivro = livro;
+        livro = livro;        
         livrosJaExibidos.add(livro.isbn);
         carregando = false; 
       });
     } catch (e) {
-      print('Erro ao buscar livro: $e');
-      setState(() {
-        carregando = false; 
-      });
+      print('Erro ao buscar livro: $e');      
+      carregando = false;       
     }
-  }
-  void atualizarLivro() {    
-    setState(() {
-      carregando = true;
-    });
-    carregandoLivro();
   }
 
   void salvarLivro() {
     setState(() {
-      if (widget.livrosEscolhidos.length < 9) {
-        widget.livrosEscolhidos.add(isbnAtual);  
-      } if (widget.livrosEscolhidos.length == 9) {
+      if (livrosEscolhidos.length < 9) {
+        livrosEscolhidos.add(livro);  
+      } if (livrosEscolhidos.length == 9) {
         finalizaRoteiro();
       }
     });
     widget.onLivroEscolhido();
     atualizarLivro();
+    setState(() {});
   }
 
   @override
@@ -346,9 +348,9 @@ class _ExibeLivroState extends State<ExibeLivro> {
                   ),
                 ),
               ],
-            ),            
-          ),          
-        ),        
+            ), 
+          ),
+        ), 
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -362,8 +364,10 @@ class _ExibeLivroState extends State<ExibeLivro> {
                 ),
               onPressed: () {   
                 //rodar animacao livro escolhido
-                salvarLivro();
-                atualizarLivro();                             
+                if (!carregando) {                  
+                  salvarLivro();
+                  atualizarLivro(); 
+                }                            
               },
             ),
             Container(   
@@ -376,7 +380,7 @@ class _ExibeLivroState extends State<ExibeLivro> {
                   if (idImagem.isNotEmpty)//se tiver imagem
                     GestureDetector(
                       child: CapaLivro(
-                        imageUrl: 'https://covers.openlibrary.org/b/id/$idImagem-M.jpg',
+                        imageId: idImagem,
                         tamanhoCapa: MediaQuery.of(context).size.width * 0.26,
                       ),
                       onTap: () {
@@ -389,7 +393,7 @@ class _ExibeLivroState extends State<ExibeLivro> {
                                 width: MediaQuery.of(context).size.width * 0.8,
                                 height: MediaQuery.of(context).size.height * 0.6,
                                 // aba de detalhes do livro
-                                child: AbaDadosLivro(livro: dadosLivro),
+                                child: AbaDadosLivro(livro: livro),
                               ),
                             );
                           },
@@ -428,63 +432,6 @@ class _ExibeLivroState extends State<ExibeLivro> {
       ],
     );
   }
-}
-
-Future<Livro> buscarPorGenero(String genero, List<String> livrosJaExibidos) async {
-  bool pesquisa = false; 
-  //enquanto o livro não ter os dados essenciais, busque o próximo
-  while (!pesquisa) {
-  
-    final response = await http.get(Uri.parse(
-      'https://openlibrary.org/search.json?subject=$genero&sort=rating&limit=7&fields=title,isbn,cover_i,author_name,publish_date'
-    ));
-    if (response.statusCode == 200) {      
-      final booksDataArray = json.decode(response.body)['docs'];
-      
-      if (booksDataArray != null && booksDataArray.isNotEmpty) {
-
-        for (var book in booksDataArray) {
-
-        if (book['isbn'] != null &&
-            book['isbn'] is List &&
-            book['isbn'].isNotEmpty &&
-            book['cover_i'] != null) {
-
-          String? isbn = book['isbn'][0];
-
-          if (isbn != null && !livrosJaExibidos.contains(isbn)) {
-            Livro livro = Livro(
-              isbn: isbn,
-              nome: book['title'],
-              imageId: book['cover_i'].toString(),
-              autor: book['author_name'][0],
-              ano: book['publish_date'][0],
-              descricao: book['description'],              
-            );            
-            livrosJaExibidos.add(isbn);            
-            pesquisa = true;
-            return livro;
-          }
-        } else {
-          if(book['isbn'] == null) {
-            print('resultado pesquisa: isbn nulo');
-          }
-          if(book['cover_i'] == null) {
-            print('resultado pesquisa: capa nula');
-          }
-        }
-        }
-      }
-    }
-    else {
-      print('Erro na requisição: ${response.statusCode}');
-      // Imprimir o motivo do erro, se disponível
-      if (response.body.isNotEmpty) {
-        print('Motivo do erro: ${response.body}');
-      }
-    }   
-  }
-  throw Exception('Não foi possível encontrar um livro válido');
 }
 
 class AbaDadosLivro extends StatefulWidget {
@@ -529,7 +476,7 @@ class _AbaDadosLivroState extends State<AbaDadosLivro> {
                     Container(                      
                       padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.04),
                       child: CapaLivro(
-                      imageUrl: 'https://covers.openlibrary.org/b/id/${widget.livro.imageId}-M.jpg',
+                      imageId: widget.livro.imageId,
                       tamanhoCapa: MediaQuery.of(context).size.width * 0.5
                     ),
                     ),
@@ -540,16 +487,22 @@ class _AbaDadosLivroState extends State<AbaDadosLivro> {
                         fontSize: MediaQuery.of(context).size.width * 0.055,
                       ),
                     ),
+                     Text(
+                      '${widget.livro.ano}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width * 0.045,
+                      ),
+                    ),
                     Text(
-                      'Ano: ${widget.livro.ano}',
+                      'Páginas: ${widget.livro.paginas}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: MediaQuery.of(context).size.width * 0.045,
                       ),
                     ),                    
                   ],
-                ),
-                             
+                ),                             
               ),
             ),
           ), 
@@ -557,6 +510,219 @@ class _AbaDadosLivroState extends State<AbaDadosLivro> {
       ),
     );
   }   
+}
+
+class AbaPrazosRoteiro extends StatefulWidget {
+  const AbaPrazosRoteiro({super.key});
+
+  @override
+  _AbaPrazosRoteiroState createState() => _AbaPrazosRoteiroState();
+}
+
+class _AbaPrazosRoteiroState extends State<AbaPrazosRoteiro> {
+  int? botaoSelecionadoIndex;
+
+  void selecionarBotao(int index) {
+    setState(() {
+      botaoSelecionadoIndex = index;
+      prazoEscolhido = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<String> aviso = [
+      'Você receberá 1 estrela concluindo a leitura de cada livro no prazo.',
+      'Você receberá 2 estrelas concluindo a leitura de cada livro no prazo.',
+      'Você receberá 3 estrelas concluindo a leitura de cada livro no prazo.',
+      'Bônus: ganhe o dobro de estrelas se concluir antes da metade do prazo!'
+    ];
+    Map<String, Color> textoNivel = {
+      'FÁCIL': Colors.blue,
+      'MÉDIO': Colors.green,
+      'DIFÍCIL': Colors.red,
+    };
+    double margem = MediaQuery.of(context).size.height * 0.02;
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Container(
+        alignment: Alignment.center,
+        height: MediaQuery.of(context).size.height * 0.8,
+        width: MediaQuery.of(context).size.width * 0.9,
+        margin: EdgeInsets.all(MediaQuery.of(context).size.width * 0.05),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.02),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text(
+              'Excelente escolha!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Column(
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.11,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (int i = 0; i < 3; i++)
+                        Padding(
+                          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.01),
+                          child: CapaLivro(
+                            imageId: livrosEscolhidos[i].imageId,
+                            tamanhoCapa: MediaQuery.of(context).size.width * 0.15,
+                            alturaCapa: MediaQuery.of(context).size.height * 0.2,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.11,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (int i = 3; i < 6; i++)
+                        Padding(
+                          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.01),
+                          child: CapaLivro(
+                            imageId: livrosEscolhidos[i].imageId,
+                            tamanhoCapa: MediaQuery.of(context).size.width * 0.15,
+                            alturaCapa: MediaQuery.of(context).size.height * 0.2,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.11,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      for (int i = 6; i < 9; i++)
+                        Padding(
+                          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.01),
+                          child: CapaLivro(
+                            imageId: livrosEscolhidos[i].imageId,
+                            tamanhoCapa: MediaQuery.of(context).size.width * 0.15,
+                            alturaCapa: MediaQuery.of(context).size.height * 0.2,
+                          ),
+                        ),
+                    ],
+                  ),
+                )
+              ],
+            ),
+            SizedBox(height: margem),
+            const Text(
+              'Agora defina o prazo de leitura:',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+              ),
+            ),
+            SizedBox(height: margem*0.4),
+            Row(
+              children: [
+                BotaoBox(
+                  largura: MediaQuery.of(context).size.width * 0.2,
+                  altura: MediaQuery.of(context).size.height * 0.1,
+                  texto: '30 dias',
+                  icone: Ionicons.star_outline,
+                  selecionado: botaoSelecionadoIndex == 0,
+                  onPressed: () {
+                    selecionarBotao(0);
+                  },
+                ),
+                SizedBox(width: margem * 0.5),
+                BotaoBox(
+                  largura: MediaQuery.of(context).size.width * 0.2,
+                  altura: MediaQuery.of(context).size.height * 0.1,
+                  texto: '20 dias',
+                  icone: Ionicons.star_half_outline,
+                  selecionado: botaoSelecionadoIndex == 1,
+                  onPressed: () {
+                    selecionarBotao(1);
+                  },
+                ),
+                SizedBox(width: margem * 0.5),
+                BotaoBox(
+                  largura: MediaQuery.of(context).size.width * 0.2,
+                  altura: MediaQuery.of(context).size.height * 0.1,
+                  texto: '10 dias',
+                  icone: Ionicons.star,
+                  selecionado: botaoSelecionadoIndex == 2,
+                  onPressed: () {
+                    selecionarBotao(2);
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: margem*0.4),
+            if (botaoSelecionadoIndex != null)
+            Text(
+              botaoSelecionadoIndex != null
+                ? textoNivel.keys.elementAt(botaoSelecionadoIndex!)
+                : '',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: botaoSelecionadoIndex != null
+                    ? textoNivel.values.elementAt(botaoSelecionadoIndex!)
+                    : Colors.black,
+              ),
+              ),
+            SizedBox(height: margem*0.4),
+            Text(
+              botaoSelecionadoIndex != null
+                  ? aviso[botaoSelecionadoIndex!]
+                  : 'Por favor, selecione um prazo de leitura.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14
+              ),
+            ),
+            SizedBox(height: margem*0.4),
+            Text(
+              botaoSelecionadoIndex != null
+                  ? aviso[3]
+                  : '',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13
+              ),
+            ),
+            SizedBox(height: margem),
+            BotaoGradiente(
+              onPressed: () {                            
+                if(botaoSelecionadoIndex != null ) {
+                  if (botaoSelecionadoIndex == 0) {
+                   setPrazoEscolhido(30);
+                  } else if (botaoSelecionadoIndex == 1) {
+                    setPrazoEscolhido(20);
+                  } else {
+                    setPrazoEscolhido(10);
+                  }
+                  Navigator.of(context).pop();                                  
+                  salvarRoteiro(getAppContext()!);                  
+                }
+              },
+              largura: MediaQuery.of(context).size.width * 0.35,
+              texto: "Estou pronto!",
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class AbaFinalizacaoRoteiro extends StatelessWidget {
@@ -577,7 +743,7 @@ class AbaFinalizacaoRoteiro extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'Seu roteiro está pronto!',
+              'Seu roteiro está pronto!\nBoa leitura!',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
@@ -593,11 +759,7 @@ class AbaFinalizacaoRoteiro extends StatelessWidget {
             const SizedBox(height: 20),           
             BotaoGradiente(
               onPressed: () {
-                Navigator.pushReplacement( // Substitui a página atual pela página principal
-                  // ignore: use_build_context_synchronously
-                  context,
-                  MaterialPageRoute(builder: (context) => const Principal()),
-                );
+                voltar(context);
               },
               largura: MediaQuery.of(context).size.width * 0.3,
               texto: "Voltar",

@@ -1,10 +1,8 @@
 // ignore_for_file: prefer_const_constructors
 import 'package:flutter/material.dart';
-import 'componentes.dart';
-import 'funcoes.dart';
-import 'principal.dart';
-
-LoadingOverlay carregamento = LoadingOverlay();
+import 'widgets/componentes.dart';
+import 'widgets/funcoes.dart';
+import 'rotas.dart';
 
 class Login extends StatefulWidget {
   // ignore: use_super_parameters
@@ -26,7 +24,8 @@ class _LoginState extends State<Login> {
   final TextEditingController _senhaController = TextEditingController();
 
   @override
-  Widget build(BuildContext context) {    
+  Widget build(BuildContext context) {  
+    setAppContext(context);
     return Scaffold(    
       backgroundColor: Colors.white,  
       body: SingleChildScrollView(
@@ -52,16 +51,16 @@ class _LoginState extends State<Login> {
           SizedBox(height: MediaQuery.of(context).size.height * 0.05),
           //titulo ----------------------------------------------------------------------
           Container(
-              alignment: Alignment.center,
-              child: Text(
-                'BOOKFLIX',
-                style: TextStyle(
-                  color: Color(0xFF48a0d4),
-                  fontSize: 50,
-                  fontWeight: FontWeight.bold,
-                ),
+            alignment: Alignment.center,
+            child: Text(
+              'BOOKFLIX',
+              style: TextStyle(
+                color: Color(0xFF48a0d4),
+                fontSize: 50,
+                fontWeight: FontWeight.bold,
               ),
             ),
+          ),
           Container(
             alignment: Alignment.center,
             width: MediaQuery.of(context).size.height * 0.2,
@@ -206,21 +205,17 @@ class _LoginState extends State<Login> {
               ],
             ),
             child: TextButton(
-              onPressed: () async {                
+              onPressed: () async {                                
                 bool emailValido = _emailFormKey.currentState!.validate();
                 bool senhaValida = _senhaFormKey.currentState!.validate();                               
 
                 if (emailValido && senhaValida) {
                   bool sucesso = await loginUsuario(context, _emailController.text, _senhaController.text); 
+                                  
                   if (sucesso) {
-                    //ir para pagina principal
-                    Navigator.pushReplacement( // Substitui a página atual pela página principal
-                      // ignore: use_build_context_synchronously
-                      context,
-                      MaterialPageRoute(builder: (context) => Principal()),
-                    );
+                    Navigator.pushReplacementNamed(getAppContext()!, Rotas.principal);
                   }
-                } 
+                }                 
               },
               style: TextButton.styleFrom(
                 shape: RoundedRectangleBorder(
@@ -468,7 +463,7 @@ class _CadastroState extends State<Cadastro> {
           ),
           SizedBox(height: MediaQuery.of(context).size.height * 0.03),
           // botao cadastrar ----------------------------------------------------------------------
-         Container(
+          Container(
             width: MediaQuery.of(context).size.width * 0.6,
             decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
